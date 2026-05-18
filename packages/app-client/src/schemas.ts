@@ -152,6 +152,41 @@ export const nativeSessionHandoffResponseSchema = z
 export type NativeSessionHandoffInput = z.input<typeof nativeSessionHandoffInputSchema>
 export type NativeSessionHandoffResponse = z.infer<typeof nativeSessionHandoffResponseSchema>
 
+export const nativeSessionRefreshInputSchema = z
+  .object({
+    deviceId: z.string().uuid(),
+    refreshToken: z.string().min(1).max(4096),
+  })
+  .strict()
+
+export const nativeSessionRefreshResponseSchema = z
+  .object({
+    accessToken: z.string().min(1),
+    refreshToken: z.string().min(1),
+    expiresAt: z.string(),
+    deviceId: z.string().uuid(),
+  })
+  .strict()
+
+export const nativeSessionRevokeInputSchema = z
+  .object({
+    deviceId: z.string().uuid().optional(),
+    refreshToken: z.string().min(1).max(4096).optional(),
+    reason: z.enum(['sign-out', 'device-lost', 'security', 'rotation']).default('sign-out'),
+  })
+  .strict()
+
+export const nativeSessionRevokeResponseSchema = z
+  .object({
+    ok: z.literal(true),
+  })
+  .strict()
+
+export type NativeSessionRefreshInput = z.input<typeof nativeSessionRefreshInputSchema>
+export type NativeSessionRefreshResponse = z.infer<typeof nativeSessionRefreshResponseSchema>
+export type NativeSessionRevokeInput = z.input<typeof nativeSessionRevokeInputSchema>
+export type NativeSessionRevokeResponse = z.infer<typeof nativeSessionRevokeResponseSchema>
+
 export const nativePushRegistrationInputSchema = z
   .object({
     deviceId: z.string().uuid(),
@@ -252,3 +287,122 @@ export const nativeActionDispatchResponseSchema = z
 
 export type NativeActionDispatchInput = z.input<typeof nativeActionDispatchInputSchema>
 export type NativeActionDispatchResponse = z.infer<typeof nativeActionDispatchResponseSchema>
+
+export const nativeApprovalSchema = z
+  .object({
+    id: z.string().min(1),
+    title: z.string().min(1),
+    summary: z.string().min(1),
+    agentName: z.string().min(1).optional(),
+    workspaceId: z.string().uuid().optional(),
+    projectId: z.string().uuid().optional(),
+    runId: z.string().min(1).optional(),
+    risk: z.enum(['confirmation-required', 'privileged']),
+    status: z.enum(['pending', 'approved', 'denied', 'expired']),
+    expiresAt: z.string().optional(),
+    createdAt: z.string(),
+    deepLink: z.string().optional(),
+  })
+  .strict()
+
+export const nativeRunSchema = z
+  .object({
+    id: z.string().min(1),
+    title: z.string().min(1),
+    agentName: z.string().min(1).optional(),
+    workspaceId: z.string().uuid().optional(),
+    projectId: z.string().uuid().optional(),
+    status: z.enum(['queued', 'running', 'paused', 'blocked', 'completed', 'failed', 'cancelled']),
+    progress: z.number().min(0).max(100).optional(),
+    needsApproval: z.boolean().default(false),
+    updatedAt: z.string(),
+    deepLink: z.string().optional(),
+  })
+  .strict()
+
+export const nativeInboxResponseSchema = z
+  .object({
+    approvals: z.array(nativeApprovalSchema),
+    runs: z.array(nativeRunSchema),
+  })
+  .strict()
+
+export const nativeRunsResponseSchema = z
+  .object({
+    runs: z.array(nativeRunSchema),
+  })
+  .strict()
+
+export const nativeApprovalDecisionInputSchema = z
+  .object({
+    decision: z.enum(['approve', 'deny']),
+    reason: z.string().max(1000).optional(),
+    deviceId: z.string().uuid().optional(),
+    confirmation: nativeActionDispatchInputSchema.shape.confirmation.optional(),
+  })
+  .strict()
+
+export const nativeApprovalDecisionResponseSchema = z
+  .object({
+    approval: nativeApprovalSchema,
+    receipt: nativeActionDispatchResponseSchema,
+  })
+  .strict()
+
+export const nativeApprovalExplainResponseSchema = z
+  .object({
+    approvalId: z.string().min(1),
+    explanation: z.string().min(1),
+    risk: z.enum(['confirmation-required', 'privileged']),
+    recommendedDecision: z.enum(['approve', 'deny', 'review']),
+  })
+  .strict()
+
+export const nativeRunControlInputSchema = z
+  .object({
+    action: z.enum(['pause', 'resume', 'cancel', 'escalate', 'open']),
+    deviceId: z.string().uuid().optional(),
+    reason: z.string().max(1000).optional(),
+    confirmation: nativeActionDispatchInputSchema.shape.confirmation.optional(),
+  })
+  .strict()
+
+export const nativeRunControlResponseSchema = z
+  .object({
+    run: nativeRunSchema,
+    receipt: nativeActionDispatchResponseSchema,
+  })
+  .strict()
+
+export const nativeShareInputSchema = z
+  .object({
+    kind: z.enum(['screenshot', 'url', 'text', 'file']),
+    intent: z.enum(['browser-qa', 'bug-report', 'investigate', 'remember']),
+    content: z.string().min(1).max(20000),
+    fileName: z.string().min(1).max(300).optional(),
+    mimeType: z.string().min(1).max(200).optional(),
+    deviceId: z.string().uuid().optional(),
+    context: nativeCommandContextSchema.optional(),
+  })
+  .strict()
+
+export const nativeShareResponseSchema = z
+  .object({
+    itemId: z.string().min(1),
+    status: z.enum(['queued', 'created']),
+    title: z.string().min(1),
+    deepLink: z.string().optional(),
+  })
+  .strict()
+
+export type NativeApproval = z.infer<typeof nativeApprovalSchema>
+export type NativeRun = z.infer<typeof nativeRunSchema>
+export type NativeInboxResponse = z.infer<typeof nativeInboxResponseSchema>
+export type NativeRunsResponse = z.infer<typeof nativeRunsResponseSchema>
+export type NativeApprovalDecisionInput = z.input<typeof nativeApprovalDecisionInputSchema>
+export type NativeApprovalDecisionResponse = z.infer<typeof nativeApprovalDecisionResponseSchema>
+export type NativeApprovalExplainResponse = z.infer<typeof nativeApprovalExplainResponseSchema>
+export type NativeRunControlInput = z.input<typeof nativeRunControlInputSchema>
+export type NativeRunControlResponse = z.infer<typeof nativeRunControlResponseSchema>
+export type NativeShareInput = z.input<typeof nativeShareInputSchema>
+export type NativeShareResponse = z.infer<typeof nativeShareResponseSchema>
