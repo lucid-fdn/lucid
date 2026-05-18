@@ -333,6 +333,41 @@ export const nativeRunsResponseSchema = z
   })
   .strict()
 
+export const nativeApprovalPolicyCheckSchema = z
+  .object({
+    label: z.string().min(1),
+    status: z.enum(['pass', 'warn', 'fail']),
+    detail: z.string().min(1),
+  })
+  .strict()
+
+export const nativeApprovalDetailResponseSchema = z
+  .object({
+    approval: nativeApprovalSchema,
+    explanation: z.string().min(1),
+    recommendedDecision: z.enum(['approve', 'deny', 'review']),
+    policyChecks: z.array(nativeApprovalPolicyCheckSchema),
+  })
+  .strict()
+
+export const nativeRunTimelineEventSchema = z
+  .object({
+    id: z.string().min(1),
+    at: z.string(),
+    title: z.string().min(1),
+    body: z.string().min(1).optional(),
+    actor: z.string().min(1).optional(),
+    level: z.enum(['info', 'success', 'warning', 'error']).default('info'),
+  })
+  .strict()
+
+export const nativeRunDetailResponseSchema = z
+  .object({
+    run: nativeRunSchema,
+    timeline: z.array(nativeRunTimelineEventSchema),
+  })
+  .strict()
+
 export const nativeApprovalDecisionInputSchema = z
   .object({
     decision: z.enum(['approve', 'deny']),
@@ -399,9 +434,13 @@ export type NativeApproval = z.infer<typeof nativeApprovalSchema>
 export type NativeRun = z.infer<typeof nativeRunSchema>
 export type NativeInboxResponse = z.infer<typeof nativeInboxResponseSchema>
 export type NativeRunsResponse = z.infer<typeof nativeRunsResponseSchema>
+export type NativeApprovalPolicyCheck = z.infer<typeof nativeApprovalPolicyCheckSchema>
+export type NativeApprovalDetailResponse = z.infer<typeof nativeApprovalDetailResponseSchema>
 export type NativeApprovalDecisionInput = z.input<typeof nativeApprovalDecisionInputSchema>
 export type NativeApprovalDecisionResponse = z.infer<typeof nativeApprovalDecisionResponseSchema>
 export type NativeApprovalExplainResponse = z.infer<typeof nativeApprovalExplainResponseSchema>
+export type NativeRunTimelineEvent = z.infer<typeof nativeRunTimelineEventSchema>
+export type NativeRunDetailResponse = z.infer<typeof nativeRunDetailResponseSchema>
 export type NativeRunControlInput = z.input<typeof nativeRunControlInputSchema>
 export type NativeRunControlResponse = z.infer<typeof nativeRunControlResponseSchema>
 export type NativeShareInput = z.input<typeof nativeShareInputSchema>

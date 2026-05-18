@@ -36,11 +36,9 @@ RUN npm ci --legacy-peer-deps
 # ══════════════════════════════════════════════
 # Stage 2: Build
 # ══════════════════════════════════════════════
-FROM node:20-slim AS builder
+FROM deps AS builder
 WORKDIR /app
 
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/packages ./packages
 COPY . .
 
 # Disable telemetry during build, increase Node memory for large builds
@@ -56,14 +54,20 @@ ENV NODE_OPTIONS="--max-old-space-size=${NODE_BUILD_HEAP}"
 # build time, so any module-scope createClient() needs valid-looking values.
 # All placeholders are overridden at runtime by docker-compose env vars.
 ARG NEXT_PUBLIC_DEPLOYMENT_MODE=self-hosted
+ARG NEXT_PUBLIC_AUTH_PROVIDER=
 ARG NEXT_PUBLIC_APP_URL=http://localhost:3000
 ARG NEXT_PUBLIC_SITE_URL=http://localhost:3000
+ARG NEXT_PUBLIC_PRIVY_APP_ID=
+ARG NEXT_PUBLIC_WEB3_ENABLED=
 ARG NEXT_PUBLIC_SUPABASE_URL=http://placeholder.supabase.local
 ARG NEXT_PUBLIC_SUPABASE_ANON_KEY=placeholder
 
 ENV NEXT_PUBLIC_DEPLOYMENT_MODE=$NEXT_PUBLIC_DEPLOYMENT_MODE
+ENV NEXT_PUBLIC_AUTH_PROVIDER=$NEXT_PUBLIC_AUTH_PROVIDER
 ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
+ENV NEXT_PUBLIC_PRIVY_APP_ID=$NEXT_PUBLIC_PRIVY_APP_ID
+ENV NEXT_PUBLIC_WEB3_ENABLED=$NEXT_PUBLIC_WEB3_ENABLED
 ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
 ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
 

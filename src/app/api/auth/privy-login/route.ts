@@ -14,6 +14,14 @@ export const dynamic = 'force-dynamic'
 let privyClient: PrivyClient | null = null;
 let supabase: ReturnType<typeof createClient> | null = null;
 
+function getAuthCookieDomain(hostname: string): string | undefined {
+  const normalized = hostname.toLowerCase();
+  if (normalized === "lucid.foundation" || normalized.endsWith(".lucid.foundation")) {
+    return ".lucid.foundation";
+  }
+  return undefined;
+}
+
 function getPrivyClient(): PrivyClient {
   if (!privyClient) {
     const appId = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
@@ -153,13 +161,14 @@ export async function POST(req: NextRequest) {
     });
 
     const isDev = process.env.NODE_ENV === 'development';
+    const cookieDomain = isDev ? undefined : getAuthCookieDomain(req.nextUrl.hostname);
     response.cookies.set('lucid-auth-token', token, {
       httpOnly: true,
       secure: !isDev,
       sameSite: isDev ? 'lax' : 'none',
       path: '/',
       maxAge: 3600,
-      ...(isDev ? {} : { domain: '.lucid.foundation' }),
+      ...(cookieDomain ? { domain: cookieDomain } : {}),
     });
 
     // Set CSRF cookie so subsequent refresh calls work

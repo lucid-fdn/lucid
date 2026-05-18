@@ -6,6 +6,7 @@ import type {
   NativeActionDispatchInput,
   NativeActionDispatchResponse,
   NativeApproval,
+  NativeApprovalDetailResponse,
   NativeApprovalDecisionInput,
   NativeApprovalDecisionResponse,
   NativeApprovalExplainResponse,
@@ -13,6 +14,8 @@ import type {
   NativeRun,
   NativeRunControlInput,
   NativeRunControlResponse,
+  NativeRunDetailResponse,
+  NativeRunTimelineEvent,
   NativeSessionHandoffInput,
   NativeSessionHandoffResponse,
   NativeSessionRefreshInput,
@@ -151,15 +154,101 @@ export function listNativeRuns(userId: string): { runs: NativeRun[] } {
   return { runs: getState(userId).runs }
 }
 
-export function explainNativeApproval(userId: string, approvalId: string): NativeApprovalExplainResponse {
+export function getNativeApprovalDetail(userId: string, approvalId: string): NativeApprovalDetailResponse {
   const approval = getState(userId).approvals.find((item) => item.id === approvalId)
   if (!approval) throw new Error('Native approval not found.')
 
+  const recommendedDecision = approval.risk === 'privileged' ? 'review' : 'approve'
+  return {
+    approval,
+    explanation: `${approval.agentName ?? 'An agent'} is requesting permission because: ${approval.summary}`,
+    recommendedDecision,
+    policyChecks: [
+      {
+        label: 'User confirmation',
+        status: approval.status === 'pending' ? 'warn' : 'pass',
+        detail: approval.status === 'pending' ? 'Waiting for your explicit approval or denial.' : `Decision recorded as ${approval.status}.`,
+      },
+      {
+        label: 'Risk tier',
+        status: approval.risk === 'privileged' ? 'warn' : 'pass',
+        detail:
+          approval.risk === 'privileged'
+            ? 'This action can affect sensitive data, spend, or runtime state.'
+            : 'This action is limited to the current run and requires confirmation.',
+      },
+      {
+        label: 'Expiry window',
+        status: approval.expiresAt && new Date(approval.expiresAt).getTime() < Date.now() ? 'fail' : 'pass',
+        detail: approval.expiresAt ? `Approval expires at ${approval.expiresAt}.` : 'No expiry is attached to this approval.',
+      },
+    ],
+  }
+}
+
+export function getNativeRunDetail(userId: string, runId: string): NativeRunDetailResponse {
+  const state = getState(userId)
+  const run = state.runs.find((item) => item.id === runId)
+  if (!run) throw new Error('Native run not found.')
+
+  const timeline: NativeRunTimelineEvent[] = [
+    {
+      id: `${run.id}:created`,
+      at: run.updatedAt,
+      title: 'Run registered',
+      body: `${run.agentName ?? 'Agent'} added this run to the native control plane.`,
+      actor: run.agentName,
+      level: 'info',
+    },
+    {
+      id: `${run.id}:status`,
+      at: run.updatedAt,
+      title: `Status: ${run.status}`,
+      body:
+        typeof run.progress === 'number'
+          ? `Current progress is ${run.progress}%.`
+          : 'The agent has not reported progress yet.',
+      actor: run.agentName,
+      level: levelForRunStatus(run.status),
+    },
+  ]
+
+  if (run.needsApproval) {
+    timeline.push({
+      id: `${run.id}:approval`,
+      at: run.updatedAt,
+      title: 'Needs approval',
+      body: 'This run is waiting on a human decision before it can continue.',
+      actor: 'Approval Wallet',
+      level: 'warning',
+    })
+  }
+
+  for (const receipt of state.receipts.filter((item) => item.actionId.includes(run.id))) {
+    timeline.push({
+      id: receipt.receiptId ?? `${run.id}:${receipt.createdAt}`,
+      at: receipt.createdAt,
+      title: `Native action ${receipt.status}`,
+      body: receipt.message,
+      actor: 'Native app',
+      level: receipt.status === 'rejected' ? 'error' : receipt.status === 'completed' ? 'success' : 'info',
+    })
+  }
+
+  return {
+    run,
+    timeline: timeline.sort((left, right) => new Date(right.at).getTime() - new Date(left.at).getTime()),
+  }
+}
+
+export function explainNativeApproval(userId: string, approvalId: string): NativeApprovalExplainResponse {
+  const detail = getNativeApprovalDetail(userId, approvalId)
+
   return {
     approvalId,
-    explanation: `${approval.agentName ?? 'An agent'} is requesting permission because: ${approval.summary}`,
-    risk: approval.risk,
-    recommendedDecision: approval.risk === 'privileged' ? 'review' : 'approve',
+    explanation: detail.explanation,
+    risk: detail.approval.risk,
+    recommendedDecision: detail.recommendedDecision,
   }
 }
 
@@ -294,3 +383,9 @@ function titleForShare(intent: NativeShareInput['intent'], kind: NativeShareInpu
   return `Remember shared ${kind}`
 }
 
+function levelForRunStatus(status: NativeRun['status']): NativeRunTimelineEvent['level'] {
+  if (status === 'completed') return 'success'
+  if (status === 'failed' || status === 'cancelled') return 'error'
+  if (status === 'blocked' || status === 'paused') return 'warning'
+  return 'info'
+}
