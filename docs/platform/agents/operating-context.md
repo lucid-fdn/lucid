@@ -47,8 +47,10 @@ An Agent Card contains profile, voice, style, examples, guardrails, knowledge re
 The assistant command center exposes an Agent Card panel with:
 
 - friendly editors for profile, voice, style, guardrails, examples, knowledge snippets, and policy JSON
+- field-level validation beside editable fields and JSON parse feedback beside the JSON editor
 - advanced JSON editing
 - validate, preview apply, apply, export, and runtime prompt preview
+- concrete diff rows for identity documents and shared context records before apply
 - identity document version history and revert
 - command palette actions for validate, preview prompt, export, and revert
 
@@ -173,6 +175,8 @@ OpenClaw runtime prompt assembly now follows this order:
 6. Conversation summary and recent turns.
 
 This gives providers a stable prompt prefix for identity while keeping daily operating context explicit and bounded.
+
+Agent Card-authored identity documents are rendered as compact summaries in the `## Agent Identity` section, not as raw JSON. Organization and Project Card records are rendered through the shared operating context section. The worker path is expected to behave the same across OpenClaw, Hermes, shared runtime flavors, and dedicated runtime flavors.
 
 ## Product UI
 

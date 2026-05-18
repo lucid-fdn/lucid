@@ -52,6 +52,10 @@ Start with [docs/SELF_HOSTING.md](docs/SELF_HOSTING.md).
 
 Environment variables are documented in [docs/ENV_REFERENCE.md](docs/ENV_REFERENCE.md).
 
+For the public documentation path, start with [docs/README.md](docs/README.md).
+
+For contribution setup and PR expectations, see [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Open Source Export Model
 
 This public repository is generated from a private source-of-truth repo through an allowlist export. The export process intentionally excludes official native apps and private release operations.

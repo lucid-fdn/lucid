@@ -1,3 +1,4 @@
+import { LUCID_NATIVE_FEATURE_IDS, type LucidNativeFeatureId } from '@lucid/app-core'
 import { z } from 'zod'
 
 export const lucidAppModeSchema = z.enum(['production', 'self-hosted', 'development'])
@@ -123,3 +124,131 @@ export const nativeDeviceDeleteResponseSchema = z
 
 export type NativeDeviceListResponse = z.infer<typeof nativeDeviceListResponseSchema>
 export type NativeDeviceResponse = z.infer<typeof nativeDeviceResponseSchema>
+
+export const nativeSessionProviderSchema = z.enum(['privy'])
+export type NativeSessionProvider = z.infer<typeof nativeSessionProviderSchema>
+
+export const nativeSessionHandoffInputSchema = z
+  .object({
+    provider: nativeSessionProviderSchema.default('privy'),
+    appKind: nativeDeviceAppKindSchema,
+    platform: nativeDevicePlatformSchema,
+    installId: z.string().min(1).max(200),
+    returnUrl: z.string().url().optional(),
+    deviceName: z.string().min(1).max(200).optional(),
+  })
+  .strict()
+
+export const nativeSessionHandoffResponseSchema = z
+  .object({
+    handoffId: z.string().min(1),
+    provider: nativeSessionProviderSchema,
+    status: z.enum(['pending', 'completed', 'expired']),
+    authorizeUrl: z.string().url(),
+    expiresAt: z.string(),
+  })
+  .strict()
+
+export type NativeSessionHandoffInput = z.input<typeof nativeSessionHandoffInputSchema>
+export type NativeSessionHandoffResponse = z.infer<typeof nativeSessionHandoffResponseSchema>
+
+export const nativePushRegistrationInputSchema = z
+  .object({
+    deviceId: z.string().uuid(),
+    provider: nativePushProviderSchema,
+    token: z.string().min(1).max(4096),
+    topics: z.array(z.enum(['approvals', 'runs', 'security', 'product'])).default(['approvals', 'runs']),
+  })
+  .strict()
+
+export const nativePushRegistrationResponseSchema = z
+  .object({
+    device: nativeDeviceSchema,
+    topics: z.array(z.string()),
+  })
+  .strict()
+
+export type NativePushRegistrationInput = z.input<typeof nativePushRegistrationInputSchema>
+export type NativePushRegistrationResponse = z.infer<typeof nativePushRegistrationResponseSchema>
+
+const nativeFeatureIdSchema = z.custom<LucidNativeFeatureId>(
+  (value) => typeof value === 'string' && (LUCID_NATIVE_FEATURE_IDS as readonly string[]).includes(value),
+  'Unknown native feature id',
+)
+
+export const nativeCommandContextSchema = z
+  .object({
+    workspaceId: z.string().uuid().optional(),
+    projectId: z.string().uuid().optional(),
+    agentId: z.string().uuid().optional(),
+    runId: z.string().uuid().optional(),
+    approvalId: z.string().uuid().optional(),
+    source: z.enum(['mobile', 'desktop', 'notification', 'share-sheet', 'shortcut', 'widget']).optional(),
+  })
+  .catchall(z.unknown())
+
+export type NativeCommandContext = z.infer<typeof nativeCommandContextSchema>
+
+export const nativeVoiceCommandInputSchema = z
+  .object({
+    deviceId: z.string().uuid().optional(),
+    mode: z.enum(['hold-to-talk', 'typed-command']).default('hold-to-talk'),
+    transcript: z.string().min(1).max(8000).optional(),
+    audioUploadId: z.string().min(1).max(300).optional(),
+    locale: z.string().min(2).max(32).optional(),
+    context: nativeCommandContextSchema.optional(),
+  })
+  .strict()
+  .refine((input) => Boolean(input.transcript || input.audioUploadId), {
+    message: 'transcript or audioUploadId is required',
+    path: ['transcript'],
+  })
+
+export const nativeVoiceCommandResponseSchema = z
+  .object({
+    commandId: z.string().min(1),
+    interpretedCommand: z.string().min(1),
+    responseText: z.string().min(1),
+    requiresConfirmation: z.boolean(),
+    confirmation: z
+      .object({
+        actionId: z.string().min(1),
+        risk: z.enum(['passive', 'user-initiated', 'confirmation-required', 'privileged']),
+        prompt: z.string().min(1),
+      })
+      .optional(),
+  })
+  .strict()
+
+export type NativeVoiceCommandInput = z.input<typeof nativeVoiceCommandInputSchema>
+export type NativeVoiceCommandResponse = z.infer<typeof nativeVoiceCommandResponseSchema>
+
+export const nativeActionDispatchInputSchema = z
+  .object({
+    featureId: nativeFeatureIdSchema,
+    actionId: z.string().min(1).max(200),
+    deviceId: z.string().uuid().optional(),
+    idempotencyKey: z.string().min(1).max(200),
+    context: nativeCommandContextSchema.optional(),
+    payload: z.record(z.string(), z.unknown()).default({}),
+    confirmation: z
+      .object({
+        confirmedAt: z.string(),
+        method: z.enum(['tap', 'biometric', 'passcode', 'desktop-confirmation']),
+        receipt: z.string().min(1).max(1000).optional(),
+      })
+      .optional(),
+  })
+  .strict()
+
+export const nativeActionDispatchResponseSchema = z
+  .object({
+    actionId: z.string().min(1),
+    status: z.enum(['queued', 'completed', 'rejected', 'requires-confirmation']),
+    receiptId: z.string().min(1).optional(),
+    message: z.string().optional(),
+  })
+  .strict()
+
+export type NativeActionDispatchInput = z.input<typeof nativeActionDispatchInputSchema>
+export type NativeActionDispatchResponse = z.infer<typeof nativeActionDispatchResponseSchema>

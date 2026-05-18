@@ -2,6 +2,18 @@
 
 This directory contains Lucid's current public docs, engineering docs, architecture notes, and implementation plans.
 
+## Public Start Here
+
+If you are reading the open-source repository for the first time, use this path:
+
+1. [Quick Start](QUICKSTART.md) for the shortest Docker-first setup.
+2. [Self-Hosting Guide](SELF_HOSTING.md) for production deployment, auth, networking, upgrade, and recovery notes.
+3. [Environment Reference](ENV_REFERENCE.md) for provider keys, generated secrets, and deployment variables.
+4. [Open Source Export](OPEN_SOURCE_EXPORT.md) for what is included, what stays private, and how the public repo is generated.
+5. [Contributing](../CONTRIBUTING.md) for branch, test, and PR expectations.
+
+The public repository intentionally includes some engineering history and implementation plans. Treat [platform/](platform/) and the files above as the canonical public documentation path; treat older plans, audits, and historical implementation notes as context unless a current guide links to them directly.
+
 For product-facing platform documentation, start in [platform/README.md](platform/README.md).
 
 For engineering guardrails, use the repository-level [CLAUDE.md](../CLAUDE.md).

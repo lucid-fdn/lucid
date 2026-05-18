@@ -131,6 +131,90 @@ const MOCK_LLM_RESPONSE = {
   },
 }
 
+class AgentCardPromptQuery {
+  constructor(private readonly table: string) {}
+  select() { return this }
+  eq() { return this }
+  is() { return this }
+  order() { return this }
+  limit() { return this }
+  maybeSingle() { return Promise.resolve({ data: null, error: null }) }
+  then(resolve: (value: { data: unknown[]; error: null }) => unknown) {
+    if (this.table === 'agent_identity_documents') {
+      return Promise.resolve(resolve({
+        data: [
+          {
+            document_type: 'SOUL',
+            status: 'active',
+            version: 1,
+            content: {
+              source: 'agent_card',
+              summary: 'Name: Runtime Card Agent\nVoice: concise and exact',
+              profile: { name: 'Runtime Card Agent' },
+            },
+          },
+          {
+            document_type: 'ACCESS_POLICY',
+            status: 'active',
+            version: 1,
+            content: {
+              source: 'agent_card',
+              summary: '- Never: invent verification evidence',
+              guardrails: { never: ['invent verification evidence'] },
+            },
+          },
+        ],
+        error: null,
+      }))
+    }
+    if (this.table === 'shared_context_records') {
+      return Promise.resolve(resolve({
+        data: [
+          {
+            scope_type: 'workspace',
+            scope_id: 'test-org-001',
+            record_type: 'policy',
+            title: 'Organization Card policy',
+            body: 'Use approvals for risky actions.',
+            confidence: 0.9,
+            status: 'active',
+            valid_from: null,
+            valid_until: null,
+            metadata: { policy: { approvals: true } },
+            created_at: new Date(0).toISOString(),
+          },
+          {
+            scope_type: 'project',
+            scope_id: 'test-project-001',
+            record_type: 'risk',
+            title: 'Project Card risk',
+            body: 'Smoke before release.',
+            confidence: 0.8,
+            status: 'active',
+            valid_from: null,
+            valid_until: null,
+            metadata: {},
+            created_at: new Date(1).toISOString(),
+          },
+        ],
+        error: null,
+      }))
+    }
+    return Promise.resolve(resolve({ data: [], error: null }))
+  }
+}
+
+function createAgentCardPromptSupabase() {
+  return {
+    from(table: string) {
+      return new AgentCardPromptQuery(table)
+    },
+    rpc() {
+      return Promise.resolve({ data: null, error: null })
+    },
+  }
+}
+
 describe('E2E: Runtime V2 Smoke Tests', () => {
   const originalEnv = { ...process.env }
 
@@ -231,6 +315,44 @@ describe('E2E: Runtime V2 Smoke Tests', () => {
       // Should include known built-in tool names
       const toolNames = callArgs.clientTools.map((t: any) => t.function.name)
       expect(toolNames).toContain('sessions_spawn')
+    })
+
+    it('injects Agent Card summaries during real agent assembly across engines and runtime flavors', async () => {
+      const { runOpenClawAgent } = await import('../OpenClawAgent.js')
+      const variants = [
+        { engine: 'openclaw', runtime_flavor: 'shared' },
+        { engine: 'openclaw', runtime_flavor: 'c1_managed' },
+        { engine: 'hermes', runtime_flavor: 'shared' },
+        { engine: 'hermes', runtime_flavor: 'c2a_autonomous' },
+      ] as const
+
+      for (const variant of variants) {
+        await runOpenClawAgent({
+          assistant: {
+            ...TEST_ASSISTANT,
+            project_id: 'test-project-001',
+            engine: variant.engine,
+            runtime_flavor: variant.runtime_flavor,
+          },
+          conversationId: `conv-agent-card-${variant.engine}-${variant.runtime_flavor}`,
+          messages: [],
+          memories: [],
+          userMessage: 'Hello',
+          budget: TEST_BUDGET,
+          llmConfig: { baseUrl: 'http://localhost:4000', apiKey: 'test-key' },
+          supabase: createAgentCardPromptSupabase() as never,
+        })
+
+        const callArgs = mockRunAgent.mock.calls.at(-1)?.[0]
+        expect(callArgs.extraSystemPrompt).toContain('## Agent Identity')
+        expect(callArgs.extraSystemPrompt).toContain('Name: Runtime Card Agent')
+        expect(callArgs.extraSystemPrompt).toContain('Never: invent verification evidence')
+        expect(callArgs.extraSystemPrompt).toContain('## Shared Operating Context')
+        expect(callArgs.extraSystemPrompt).toContain('Organization Card policy')
+        expect(callArgs.extraSystemPrompt).toContain('Project Card risk')
+        expect(callArgs.extraSystemPrompt).not.toContain('"profile"')
+        expect(callArgs.extraSystemPrompt).not.toContain('"guardrails"')
+      }
     })
 
     it('skips prompt image autodetection when inbound images are already supplied', async () => {

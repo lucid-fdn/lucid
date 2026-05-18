@@ -6,7 +6,7 @@ Thanks for your interest in contributing to Lucid. This guide covers everything 
 
 ### Prerequisites
 
-- Node.js 20+
+- Node.js 24 recommended. Node.js 20+ may work for local iteration, but public CI runs on Node.js 24.
 - Docker 24+ and Docker Compose v2
 - Git
 
@@ -17,8 +17,8 @@ Thanks for your interest in contributing to Lucid. This guide covers everything 
 git clone https://github.com/<your-username>/lucid.git
 cd lucid
 
-# Install dependencies
-npm install --legacy-peer-deps
+# Install dependencies exactly from the public lockfile
+npm ci --legacy-peer-deps
 
 # Generate environment variables
 ./scripts/generate-env.sh
@@ -102,10 +102,10 @@ cd worker && npx vitest run
 
 ## Pull Request Process
 
-1. Create a branch from `develop` (not `main`).
+1. Create a branch from `main`.
 2. Make your changes with tests.
 3. Run `npm run typecheck` and `npm run test` locally.
-4. Push your branch and open a PR against `develop`.
+4. Push your branch and open a PR against `main`.
 5. Fill out the PR template with a summary, change list, and testing notes.
 6. Wait for CI to pass and a maintainer to review.
 
