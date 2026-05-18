@@ -6,6 +6,7 @@
 
 import 'server-only'
 import { cookies } from 'next/headers'
+import { headers } from 'next/headers'
 import { createHash, createHmac, timingSafeEqual } from 'crypto'
 import { cacheStore } from './cache'
 import { ErrorService } from '@/lib/errors/error-service'
@@ -13,6 +14,7 @@ import { AuthenticationError } from '@/lib/errors/types'
 import { TTL } from '@/lib/cache/config'
 import { getAuthProvider, getAuthProviderType, getAuthTokenCookieNames } from './adapter'
 import { redactLogMetadata } from '@/lib/logging/safe-log'
+import { resolveNativeAccessTokenUserId } from '@/lib/db/native-devices'
 
 export type ServerSession = {
   userId: string | null
@@ -29,6 +31,17 @@ function shouldLogAuthTimings(): boolean {
 function logAuthTiming(payload: Record<string, unknown>) {
   if (!shouldLogAuthTimings()) return
   console.log('[auth:session]', redactLogMetadata(payload))
+}
+
+async function getNativeBearerToken(): Promise<string | null> {
+  try {
+    const authorization = (await headers()).get('authorization')
+    const match = authorization?.match(/^Bearer\s+(.+)$/i)
+    const token = match?.[1]?.trim()
+    return token?.startsWith('native_access_') ? token : null
+  } catch {
+    return null
+  }
 }
 
 export async function cacheServerSessionForToken(
@@ -112,6 +125,19 @@ export async function getServerSession(): Promise<ServerSession> {
     const devBypassUserId = getDevBypassUserId()
     const providerType = getAuthProviderType()
     providerReadyAt = Date.now()
+    const nativeBearerToken = await getNativeBearerToken()
+    if (nativeBearerToken) {
+      const userId = await resolveNativeAccessTokenUserId(nativeBearerToken)
+      logAuthTiming({
+        phase: 'complete',
+        provider: providerType,
+        source: userId ? 'native-bearer' : 'native-bearer-invalid',
+        provider_ms: providerReadyAt - startedAt,
+        total_ms: Date.now() - startedAt,
+      })
+      return { userId }
+    }
+
     const cookieStore = await cookies()
     cookiesReadyAt = Date.now()
     const e2eSession = verifySignedE2ESession(cookieStore.get(E2E_AUTH_COOKIE)?.value)

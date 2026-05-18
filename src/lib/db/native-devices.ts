@@ -233,6 +233,46 @@ export async function revokeNativeDevice(userId: string, deviceId: string): Prom
   if (sessionError) throw sessionError
 }
 
+export async function resolveNativeAccessTokenUserId(accessToken: string): Promise<string | null> {
+  const tokenHash = hashNativeSecret(accessToken)
+  const now = new Date().toISOString()
+
+  const { data: session, error: sessionError } = await supabase
+    .from('native_auth_sessions')
+    .select('id, user_id, device_id, expires_at, revoked_at')
+    .eq('token_hash', tokenHash)
+    .maybeSingle()
+
+  if (sessionError) throw sessionError
+  if (!session?.user_id || session.revoked_at || new Date(String(session.expires_at)).getTime() <= Date.now()) {
+    return null
+  }
+
+  const { data: device, error: deviceError } = await supabase
+    .from('native_devices')
+    .select('id, revoked_at')
+    .eq('id', session.device_id)
+    .eq('user_id', session.user_id)
+    .maybeSingle()
+
+  if (deviceError) throw deviceError
+  if (!device || device.revoked_at) return null
+
+  await supabase
+    .from('native_auth_sessions')
+    .update({ last_used_at: now })
+    .eq('id', session.id)
+    .is('revoked_at', null)
+
+  await supabase
+    .from('native_devices')
+    .update({ last_seen_at: now, updated_at: now })
+    .eq('id', session.device_id)
+    .eq('user_id', session.user_id)
+
+  return String(session.user_id)
+}
+
 async function assertNativeDeviceOrgMembership(userId: string, orgId: string | null): Promise<void> {
   if (!orgId) return
 
