@@ -1,0 +1,3 @@
+-- Placeholder for a migration already applied on the linked Supabase project.
+-- Added locally so Supabase CLI migration history can remain aligned before
+-- applying later Lucid Knowledge migrations.

@@ -1,0 +1,76 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+      "@contracts/*": [
+        "./contracts/*"
+      ],
+      "@lucid/agent-routing": [
+        "./packages/agent-routing/src/index.ts"
+      ],
+      "@lucid/app-client": [
+        "./packages/app-client/src/index.ts"
+      ],
+      "@lucid/app-client/*": [
+        "./packages/app-client/src/*"
+      ],
+      "@lucid/browser-checkout-adapter": [
+        "./packages/browser-checkout-adapter/src/index.ts"
+      ],
+      "@lucid/runtime-compat": [
+        "./packages/runtime-compat/src/index.ts"
+      ],
+      "@lucid/plugin-policy": [
+        "./packages/plugin-policy"
+      ],
+      "@payload-config": [
+        "./src/payload.config.ts"
+      ]
+    },
+    "allowJs": false,
+    "noEmit": true,
+    "incremental": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
+  },
+  "include": [
+    ".next*/types/**/*.ts",
+    ".next/types/**/*.ts",
+    ".next-build/types/**/*.ts",
+    "contracts/**/*",
+    "next-env.d.ts",
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    ".next-smoke-*",
+    "**/*.minimatch.d.ts",
+    "**/__tests__/**",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "tests/**",
+    "vitest.config.mts"
+  ]
+}

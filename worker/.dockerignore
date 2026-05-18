@@ -1,0 +1,7 @@
+# Exclude node_modules from being copied
+# This ensures npm install creates a fresh node_modules in the correct location
+node_modules
+dist
+*.log
+.env
+.env.local

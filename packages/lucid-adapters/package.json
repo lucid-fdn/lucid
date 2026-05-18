@@ -1,0 +1,20 @@
+{
+  "name": "@lucid/adapters",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Thin adapter layer bridging OpenClaw to LucidMerged SaaS (Supabase, multi-tenant, Lucid-L2)",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.3"
+  }
+}

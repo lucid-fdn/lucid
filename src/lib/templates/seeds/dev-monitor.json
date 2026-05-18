@@ -1,0 +1,122 @@
+{
+  "slug": "dev-monitor",
+  "name": "Engineering Watch",
+  "description": "Triage Linear issues, escalate real incidents, and package safe fix work.",
+  "category": "engineering",
+  "kind": "agent",
+  "tags": ["engineering-triage", "linear-monitoring", "github-prs", "bug-routing", "dev-automation"],
+  "preview_prompt": "Review new backend bugs in Linear and package anything safe for autonomous action",
+  "spec": {
+    "kind": "agent",
+    "system_prompt": "You are Engineering Triage Manager for {{COMPANY_NAME}}. Your mission: monitor {{LINEAR_PROJECT}}, separate urgent incidents from automatable engineering work, and move well-scoped tickets toward implementation without creating operational risk.\\n\\nStep 1: Review new or updated issues in {{LINEAR_PROJECT}}. Classify each as incident, bug, technical debt, small enhancement, vague report, or non-actionable noise.\\n\\nStep 2: Apply autonomy rules. P0 or clearly production-breaking incidents must be escalated immediately to {{ALERT_SLACK_CHANNEL}} and never handled autonomously. P1 and P2 bugs require rapid triage and clear ownership. Only proceed autonomously on tickets that are well defined, low blast radius, testable, and realistically solvable within a small scoped change.\\n\\nStep 3: For autonomous candidates, inspect the linked repository {{GITHUB_ORG}}/{{REPO_NAME}} and confirm the acceptance criteria, likely files touched, and required tests. If the ticket lacks reproduction steps, missing context, or touches risky infrastructure, stop and request clarification in Linear instead of coding blind.\\n\\nStep 4: When proceeding, create a branch using the ticket id, implement the fix following existing patterns, update or add tests, and open a PR. The PR body must contain: problem, root cause, solution, test plan, rollback risk, and link to the Linear issue. Request review from {{GITHUB_REVIEWER}}.\\n\\nStep 5: Update the ticket state appropriately and post a daily digest to {{ALERT_SLACK_CHANNEL}} with four sections: 'Escalated incidents', 'PRs opened', 'Tickets awaiting clarification', 'Deferred items and why'.\\n\\nDecision rules: if blast radius is unclear, default to draft PR or clarification rather than confident automation. If the change requires schema migrations, infra changes, secrets, or cross-service coordination, escalate. If tests cannot be run or are failing for unrelated reasons, say so clearly in the PR. If the repo or ticket API fails, output the exact branch name, proposed plan, and missing action so a human can continue. Never push directly to main. Never auto-handle incidents. The goal is disciplined engineering throughput, not reckless ticket closure.",
+    "model_hint": "strong",
+    "plugins": ["linear", "github", "slack"],
+    "memory_enabled": true,
+    "memory_strategy": "auto",
+    "default_schedules": [
+      {
+        "cron": "0 9 * * 1-5",
+        "prompt": "Run your daily engineering digest for {{LINEAR_PROJECT}}. Review new and updated Linear issues, classify each, and post the digest to {{ALERT_SLACK_CHANNEL}} with sections: Escalated incidents, PRs opened, Tickets awaiting clarification, Deferred items.",
+        "description": "Daily engineering triage digest (Mon–Fri at 9am UTC)",
+        "optional": false
+      }
+    ],
+    "memory_schema": [
+      {
+        "category": "fact",
+        "description": "Remember recurring issue patterns, past escalations, and which ticket types have been autonomously resolved",
+        "importance_floor": 0.6
+      },
+      {
+        "category": "context",
+        "description": "Remember the current state of ongoing incidents and in-flight PRs",
+        "importance_floor": 0.7
+      }
+    ],
+    "ops_workflows": [
+      {
+        "workflow_id": "investigate",
+        "label": "Investigate an incident or unclear ticket",
+        "description": "Use Agent Ops investigation when an issue needs evidence before action.",
+        "launch_contexts": ["project", "assistant", "incident"],
+        "input_defaults": {
+          "target": "{{LINEAR_PROJECT}} issue or incident"
+        }
+      },
+      {
+        "workflow_id": "review",
+        "label": "Review an autonomous PR",
+        "description": "Use the shared Agent Ops review contract before merging autonomous engineering work.",
+        "launch_contexts": ["project", "assistant", "run"],
+        "input_defaults": {
+          "focus": "Correctness, tests, rollback risk, and production safety"
+        }
+      },
+      {
+        "workflow_id": "qa",
+        "label": "QA a fix or deploy preview",
+        "description": "Use browser-backed QA when a ticket has a visible product or API behavior to verify.",
+        "launch_contexts": ["project", "deploy", "run"]
+      },
+      {
+        "workflow_id": "ship",
+        "label": "Prepare safe release handoff",
+        "description": "Use Ship to collect checks, approvals, risk, and rollback notes before production release.",
+        "launch_contexts": ["project", "run", "deploy"],
+        "input_defaults": {
+          "target": "{{REPO_NAME}} branch or PR"
+        }
+      }
+    ]
+  },
+  "params": [
+    {
+      "key": "COMPANY_NAME",
+      "label": "Company Name",
+      "type": "text",
+      "required": true,
+      "placeholder": "Northstar Labs",
+      "hint": "Engineering organization running the triage workflow."
+    },
+    {
+      "key": "GITHUB_ORG",
+      "label": "GitHub Organization",
+      "type": "text",
+      "required": true,
+      "placeholder": "northstar-labs",
+      "hint": "Owner of the repository containing the target code."
+    },
+    {
+      "key": "REPO_NAME",
+      "label": "Repository Name",
+      "type": "text",
+      "required": true,
+      "placeholder": "platform-api",
+      "hint": "Repository monitored for autonomous engineering work."
+    },
+    {
+      "key": "LINEAR_PROJECT",
+      "label": "Linear Project",
+      "type": "text",
+      "required": true,
+      "placeholder": "Platform Reliability",
+      "hint": "Project or board the agent should monitor."
+    },
+    {
+      "key": "ALERT_SLACK_CHANNEL",
+      "label": "Engineering Alert Channel",
+      "type": "text",
+      "required": true,
+      "placeholder": "#eng-triage",
+      "hint": "Slack channel for escalations and daily digests."
+    },
+    {
+      "key": "GITHUB_REVIEWER",
+      "label": "Default Reviewer",
+      "type": "text",
+      "required": true,
+      "placeholder": "schen",
+      "hint": "GitHub handle for the reviewer who should be requested on autonomous PRs."
+    }
+  ]
+}

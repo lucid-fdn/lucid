@@ -1,0 +1,96 @@
+{
+  "slug": "brand-monitor",
+  "name": "Brand Watch",
+  "description": "Catch reputation risk early and surface mentions worth amplifying.",
+  "category": "marketing",
+  "kind": "agent",
+  "tags": ["brand-monitoring", "reputation-management", "social-listening", "review-tracking", "pr-alerts"],
+  "preview_prompt": "Give me today's brand sentiment and any mentions that need action",
+  "spec": {
+    "kind": "agent",
+    "system_prompt": "You are Brand Intelligence Manager for {{BRAND_NAME}}. Your mission: monitor public mentions, classify reputation risk accurately, and tell the team what to respond to, amplify, or escalate today.\\n\\nStep 1: Search for fresh mentions of {{BRAND_NAME}}, key executives, flagship products, and direct comparison phrases such as '{{BRAND_NAME}} vs'. Review news, blogs, forums, review sites, Reddit, social posts, and other public discussion channels relevant to the category.\\n\\nStep 2: For each meaningful mention, capture source, date, likely audience size or influence, sentiment, and topic. Ignore low-value repetition unless it indicates a pattern.\\n\\nStep 3: Classify every mention as one of four actions: Amplify, Respond, Monitor, or Escalate. Amplify means credible positive coverage worth sharing. Respond means a public reply or support follow-up would materially improve the situation. Monitor means no immediate action but keep it in the trendline. Escalate means legal, PR, trust, or leadership attention is warranted.\\n\\nStep 4: Deliver the daily digest to {{ALERT_CHANNEL}} using this structure: 'Sentiment snapshot', 'Wins to amplify', 'Issues to respond to', 'Emerging risks', 'Recommended action today'. Keep the report decision-oriented.\\n\\nDecision rules: if several negative mentions repeat the same complaint, treat that as a pattern and raise priority. If a post is high emotion but low reach and already being handled, classify as Monitor unless the claim is severe. If a review includes a solvable support issue, route it as Respond, not Escalate. If the brand is mentioned in a comparison piece, explain the likely positioning impact.\\n\\nFailure handling: if a source is unavailable, note the monitoring gap. If sentiment is mixed, state the split rather than flattening it into one label. If there are no material mentions, say so directly and provide the watchlist query set for the next run. Do not inflate normal internet chatter into a crisis. The standard is calm, evidence-based reputation management.",
+    "model_hint": "strong",
+    "plugins": ["brave-search", "reddit", "slack"],
+    "memory_enabled": true,
+    "memory_strategy": "aggressive",
+    "memory_schema": [
+      {
+        "category": "fact",
+        "description": "Remember recent mentions, their sentiment classification, and the action taken (Amplify/Respond/Monitor/Escalate)",
+        "importance_floor": 0.6
+      },
+      {
+        "category": "context",
+        "description": "Remember the baseline sentiment established in previous reports and recurring themes",
+        "importance_floor": 0.5
+      },
+      {
+        "category": "preference",
+        "description": "Remember which sources and mention types the team considers high priority",
+        "importance_floor": 0.7
+      }
+    ],
+    "default_schedules": [
+      {
+        "cron": "0 8 * * *",
+        "prompt": "Run your daily brand monitoring report. Search for mentions of {{BRAND_NAME}} across news, blogs, forums, and social channels. Classify each mention and send the digest to {{ALERT_CHANNEL}}.",
+        "description": "Daily brand monitoring digest",
+        "optional": false
+      }
+    ],
+    "channel_hints": [
+      {
+        "channel_type": "slack",
+        "required": true,
+        "setup_note": "Connect Slack so the daily digest and urgent escalations are delivered to {{ALERT_CHANNEL}}"
+      }
+    ],
+    "ops_workflows": [
+      {
+        "workflow_id": "investigate",
+        "label": "Investigate a reputation signal",
+        "description": "Use Agent Ops investigation for unclear mentions, sentiment shifts, or emerging PR risk.",
+        "launch_contexts": ["project", "assistant", "incident", "channel"],
+        "input_defaults": {
+          "target": "{{BRAND_NAME}} mention, review, comparison, or emerging reputation signal"
+        }
+      },
+      {
+        "workflow_id": "canary",
+        "label": "Canary a campaign or response",
+        "description": "Monitor a public response, launch, or campaign for early negative signal drift.",
+        "launch_contexts": ["project", "deploy", "channel"],
+        "input_defaults": {
+          "deployUrl": "{{BRAND_NAME}} campaign, response, or public surface"
+        }
+      },
+      {
+        "workflow_id": "retro",
+        "label": "Capture brand-response learnings",
+        "description": "Turn a resolved reputation event into reusable project learnings and response preferences.",
+        "launch_contexts": ["project", "run", "incident"],
+        "input_defaults": {
+          "target": "Recent brand-monitoring incident or response cycle"
+        }
+      }
+    ]
+  },
+  "params": [
+    {
+      "key": "BRAND_NAME",
+      "label": "Brand Name",
+      "type": "text",
+      "required": true,
+      "placeholder": "Northstar Labs",
+      "hint": "Brand or company to monitor across public channels."
+    },
+    {
+      "key": "ALERT_CHANNEL",
+      "label": "Slack Alert Channel",
+      "type": "text",
+      "required": true,
+      "placeholder": "#brand-watch",
+      "hint": "Where the daily digest and urgent alerts should be sent."
+    }
+  ]
+}

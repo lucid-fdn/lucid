@@ -1,0 +1,178 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Production builds
+.next/
+out/
+build/
+dist/
+
+# Keep compiled Nango action scripts (needed by worker Dockerfile)
+!nango-integrations/build/
+
+# TypeScript build info (11MB+, not needed in repo)
+*.tsbuildinfo
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# MCP Configuration (contains sensitive credentials)
+.cursor/mcp.json
+.vscode/mcp.json
+.mcp/.env
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Captured log files
+logs/*.log
+logs/*.json
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# nyc test coverage
+.nyc_output
+
+# Dependency directories
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# next.js build output
+.next
+
+# nuxt.js build output
+.nuxt
+
+# vuepress build output
+.vuepress/dist
+
+# Serverless directories
+.serverless
+
+# FuseBox cache
+.fusebox/
+
+# DynamoDB Local files
+.dynamodb/
+
+# TernJS port file
+.tern-port
+
+# Stores VSCode versions used for testing VSCode extensions
+.vscode-test
+
+# Turbo
+.turbo
+
+# Sanity
+.sanity/
+# Sentry Config File
+.env.sentry-build-plugin
+
+.vercel
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.idea/
+*.swp
+*.swo
+.git_disabled/
+.claude/
+.cursor/
+.augment/
+.agents/
+.codebuddy/
+.commandcode/
+.continue/
+.factory/
+.iflow/
+.junie/
+.kilocode/
+.kiro/
+.kode/
+.mcpjam/
+.mux/
+.neovate/
+.openhands/
+.pochi/
+.qoder/
+.qwen/
+.roo/
+.trae/
+.vibe/
+.zencoder/
+
+# Worktrees
+.worktrees/
+
+# Open-source export output
+.oss-export/
+
+# Local tool config
+.mcp.json
+.superpowers/
+
+# Screenshots (dev-only)
+screenshots/
+.playwright/
+
+# Generated live OAuth e2e fixtures/reports
+worker/src/agent/oauth-tools/__tests__/action-e2e.fixtures.generated.json
+worker/src/agent/oauth-tools/__tests__/action-e2e.report.generated.json
+
+# Supabase CLI temp
+supabase/.temp/
+
+# Crypto/cert files
+*.key
+*.pem
+*.crt
+*.p12
+*.p8
+*.pfx
+*.jks
+*.keystore
+*.mobileprovision
+
+# Native release credentials generated from CI secrets
+apps/mobile/.eas-secrets/
+apps/mobile/credentials.json
+
+# Claude Code hook state (validation receipts)
+.claude/hooks/state/
+
+# Competitive intelligence (private analysis)
+docs/intel/

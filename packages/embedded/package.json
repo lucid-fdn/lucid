@@ -1,0 +1,27 @@
+{
+  "name": "@lucid-fdn/plugins-embedded",
+  "version": "2.0.0",
+  "description": "All Lucid plugin MCP server factories bundled for in-process embedding",
+  "type": "module",
+  "main": "dist/index.js",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup"
+  },
+  "peerDependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0"
+  },
+  "dependencies": {
+    "jsdom": "^24.1.0",
+    "cheerio": "^1.0.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.4.0",
+    "typescript": "^5.6.0"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org",
+    "access": "public"
+  },
+  "license": "MIT"
+}

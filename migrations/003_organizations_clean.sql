@@ -1,0 +1,212 @@
+-- ============================================================================
+-- Organizations Tables - 100% NON-DESTRUCTIVE VERSION
+-- ============================================================================
+-- No DROP statements - completely safe to run
+-- If tables exist, it just adds missing parts
+
+-- ============================================================================
+-- Organizations Table
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS organizations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    slug TEXT,
+    name TEXT,
+    type TEXT,
+    logo_url TEXT,
+    bio TEXT,
+    homepage TEXT,
+    interests TEXT[],
+    github_username TEXT,
+    twitter_username TEXT,
+    linkedin_url TEXT,
+    created_by UUID,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Add unique constraint on slug (only if not exists)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint 
+        WHERE conname = 'organizations_slug_key'
+    ) THEN
+        ALTER TABLE organizations ADD CONSTRAINT organizations_slug_key UNIQUE (slug);
+    END IF;
+END $$;
+
+-- Create indexes
+CREATE INDEX IF NOT EXISTS idx_organizations_slug ON organizations(slug);
+CREATE INDEX IF NOT EXISTS idx_organizations_created_by ON organizations(created_by);
+CREATE INDEX IF NOT EXISTS idx_organizations_type ON organizations(type);
+
+-- ============================================================================
+-- Organization Members Table
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS organization_members (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    organization_id UUID,
+    user_id UUID,
+    role TEXT DEFAULT 'member',
+    joined_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Add unique constraint (only if not exists)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint 
+        WHERE conname = 'organization_members_organization_id_user_id_key'
+    ) THEN
+        ALTER TABLE organization_members 
+        ADD CONSTRAINT organization_members_organization_id_user_id_key 
+        UNIQUE (organization_id, user_id);
+    END IF;
+END $$;
+
+-- Create indexes
+CREATE INDEX IF NOT EXISTS idx_org_members_org_id ON organization_members(organization_id);
+CREATE INDEX IF NOT EXISTS idx_org_members_user_id ON organization_members(user_id);
+CREATE INDEX IF NOT EXISTS idx_org_members_role ON organization_members(role);
+
+-- ============================================================================
+-- Add Foreign Keys (only if profiles.id exists)
+-- ============================================================================
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'profiles' AND column_name = 'id'
+    ) THEN
+        -- FK for organizations.created_by
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_constraint 
+            WHERE conname = 'organizations_created_by_fkey'
+        ) THEN
+            ALTER TABLE organizations 
+            ADD CONSTRAINT organizations_created_by_fkey 
+            FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL;
+        END IF;
+        
+        -- FK for organization_members.user_id
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_constraint 
+            WHERE conname = 'organization_members_user_id_fkey'
+        ) THEN
+            ALTER TABLE organization_members 
+            ADD CONSTRAINT organization_members_user_id_fkey 
+            FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE;
+        END IF;
+    END IF;
+    
+    -- FK for organization_members.organization_id
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint 
+        WHERE conname = 'organization_members_organization_id_fkey'
+    ) THEN
+        ALTER TABLE organization_members 
+        ADD CONSTRAINT organization_members_organization_id_fkey 
+        FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE;
+    END IF;
+END $$;
+
+-- ============================================================================
+-- Triggers
+-- ============================================================================
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_organizations_updated_at') THEN
+        CREATE TRIGGER update_organizations_updated_at 
+            BEFORE UPDATE ON organizations 
+            FOR EACH ROW 
+            EXECUTE FUNCTION update_updated_at_column();
+    END IF;
+END $$;
+
+CREATE OR REPLACE FUNCTION add_org_creator_as_owner()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.created_by IS NOT NULL THEN
+        INSERT INTO organization_members (organization_id, user_id, role)
+        VALUES (NEW.id, NEW.created_by, 'owner')
+        ON CONFLICT (organization_id, user_id) DO NOTHING;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trigger_add_org_creator') THEN
+        CREATE TRIGGER trigger_add_org_creator
+            AFTER INSERT ON organizations
+            FOR EACH ROW
+            EXECUTE FUNCTION add_org_creator_as_owner();
+    END IF;
+END $$;
+
+-- ============================================================================
+-- RLS Policies (only if not exists)
+-- ============================================================================
+ALTER TABLE organizations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE organization_members ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+    -- Organizations policies
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'organizations' AND policyname = 'Public can view organizations'
+    ) THEN
+        CREATE POLICY "Public can view organizations"
+        ON organizations FOR SELECT USING (true);
+    END IF;
+    
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'organizations' AND policyname = 'Authenticated users can create'
+    ) THEN
+        CREATE POLICY "Authenticated users can create"
+        ON organizations FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+    END IF;
+    
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'organizations' AND policyname = 'Users can update their orgs'
+    ) THEN
+        CREATE POLICY "Users can update their orgs"
+        ON organizations FOR UPDATE USING (auth.uid() = created_by);
+    END IF;
+    
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'organizations' AND policyname = 'Users can delete their orgs'
+    ) THEN
+        CREATE POLICY "Users can delete their orgs"
+        ON organizations FOR DELETE USING (auth.uid() = created_by);
+    END IF;
+    
+    -- Organization members policies
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'organization_members' AND policyname = 'Public can view members'
+    ) THEN
+        CREATE POLICY "Public can view members"
+        ON organization_members FOR SELECT USING (true);
+    END IF;
+    
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'organization_members' AND policyname = 'Auth users manage members'
+    ) THEN
+        CREATE POLICY "Auth users manage members"
+        ON organization_members FOR ALL USING (auth.role() = 'authenticated');
+    END IF;
+END $$;
+
+-- ============================================================================
+-- Success!
+-- ============================================================================
+-- Verify with:
+-- SELECT table_name FROM information_schema.tables 
+-- WHERE table_name IN ('organizations', 'organization_members');

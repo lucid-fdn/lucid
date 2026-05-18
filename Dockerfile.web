@@ -1,0 +1,108 @@
+# Lucid Web — Multi-stage Next.js standalone build
+# Build: docker build -f Dockerfile.web -t lucid-web .
+#
+# Multi-arch: node:20-slim supports linux/amd64 and linux/arm64 natively.
+# Docker automatically pulls the correct architecture for your platform.
+#
+# NEXT_PUBLIC_* vars are baked at build time (Next.js requirement).
+# Runtime env vars (SUPABASE_SERVICE_ROLE_KEY, etc.) are read at startup.
+
+# ══════════════════════════════════════════════
+# Stage 1: Dependencies
+# ══════════════════════════════════════════════
+FROM node:20-slim AS deps
+WORKDIR /app
+
+# Copy package files + local workspace packages
+COPY package.json package-lock.json .npmrc ./
+COPY packages/ ./packages/
+
+# Build local packages in dependency order (single layer)
+RUN set -e; \
+  for pkg in agent-tools-core code-interpreter content web3-types web3-operator \
+             integration-auth plugin-policy plugin-executor openclaw-runtime; do \
+    dir="/app/packages/$pkg"; \
+    if [ -d "$dir" ] && [ -f "$dir/package.json" ]; then \
+      echo ">>> Building packages/$pkg"; \
+      cd "$dir" && npm install --legacy-peer-deps && \
+      if grep -q '"build"' package.json; then npm run build; fi; \
+      cd /app; \
+    fi; \
+  done
+
+# Install root dependencies
+RUN npm ci --legacy-peer-deps
+
+# ══════════════════════════════════════════════
+# Stage 2: Build
+# ══════════════════════════════════════════════
+FROM node:20-slim AS builder
+WORKDIR /app
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/packages ./packages
+COPY . .
+
+# Disable telemetry during build, increase Node memory for large builds
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_OUTPUT_STANDALONE=1
+ARG NODE_BUILD_HEAP=4096
+ENV NODE_OPTIONS="--max-old-space-size=${NODE_BUILD_HEAP}"
+
+# Build-time env vars (self-host defaults)
+# NEXT_PUBLIC_* vars are inlined by Next.js at build time via DefinePlugin.
+# Server-side vars (SUPABASE_SERVICE_ROLE_KEY etc.) are read at runtime via
+# process.env, but Next.js page-data collection EXECUTES route modules at
+# build time, so any module-scope createClient() needs valid-looking values.
+# All placeholders are overridden at runtime by docker-compose env vars.
+ARG NEXT_PUBLIC_DEPLOYMENT_MODE=self-hosted
+ARG NEXT_PUBLIC_APP_URL=http://localhost:3000
+ARG NEXT_PUBLIC_SITE_URL=http://localhost:3000
+ARG NEXT_PUBLIC_SUPABASE_URL=http://placeholder.supabase.local
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY=placeholder
+
+ENV NEXT_PUBLIC_DEPLOYMENT_MODE=$NEXT_PUBLIC_DEPLOYMENT_MODE
+ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
+ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
+ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
+ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+# Server-side placeholders for build-time page data collection
+ENV SUPABASE_SERVICE_ROLE_KEY=placeholder-build-key
+ENV JWT_SECRET=placeholder-build-jwt-secret
+
+RUN npm run build
+
+# ══════════════════════════════════════════════
+# Stage 3: Runner
+# ══════════════════════════════════════════════
+FROM node:20-slim AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# Don't run as root
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
+
+# Copy standalone output
+COPY --from=builder /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Railway may keep a service-level `npm start` command even when the image is
+# built from this Dockerfile. Provide a tiny package script so the web image is
+# compatible with both Docker CMD and Railway's existing start-command setting.
+RUN printf '{"scripts":{"start":"node server.js"}}\n' > package.json && chown nextjs:nodejs package.json
+
+USER nextjs
+# The Railway public domain for the web service is wired to the standard
+# service HTTP port. Keep the image default aligned so edge routing does not
+# depend on a runtime env override being applied before Next starts.
+EXPOSE 8080
+
+ENV PORT=8080
+ENV HOSTNAME="0.0.0.0"
+
+CMD ["node", "server.js"]

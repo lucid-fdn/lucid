@@ -1,0 +1,1 @@
+DROP TRIGGER IF EXISTS trigger_create_default_project_and_env ON organizations;

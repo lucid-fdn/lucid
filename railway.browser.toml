@@ -1,0 +1,11 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "worker/Dockerfile"
+buildContext = "."
+
+[deploy]
+startCommand = "npm start"
+healthcheckPath = "/ready"
+healthcheckTimeout = 300
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10

@@ -1,0 +1,33 @@
+{
+  "name": "@lucid/runtime-adapter-sdk",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SDK helpers for building, validating, and testing Lucid runtime adapters",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "NODE_OPTIONS=--max-old-space-size=4096 tsc",
+    "typecheck": "NODE_OPTIONS=--max-old-space-size=4096 tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@lucid/runtime-adapters": "file:../runtime-adapters",
+    "zod": "^4.1.11"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.3",
+    "vitest": "^4.0.18"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

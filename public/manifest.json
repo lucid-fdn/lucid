@@ -1,0 +1,49 @@
+{
+  "name": "Lucid Studio - AI Agent Platform",
+  "short_name": "Lucid Studio",
+  "description": "Create and manage AI agents, chat with intelligent assistants",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/lucid.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/lucid.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "business", "utilities"],
+  "scope": "/",
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "View your AI agents dashboard",
+      "url": "/dashboard",
+      "icons": [{ "src": "/lucid.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Create Agent",
+      "short_name": "Create",
+      "description": "Create a new AI agent",
+      "url": "/agents/create",
+      "icons": [{ "src": "/lucid.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Chat",
+      "short_name": "Chat",
+      "description": "Start a chat session",
+      "url": "/chat",
+      "icons": [{ "src": "/lucid.png", "sizes": "192x192" }]
+    }
+  ]
+}

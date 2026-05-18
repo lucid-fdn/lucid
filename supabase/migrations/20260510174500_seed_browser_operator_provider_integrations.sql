@@ -1,0 +1,103 @@
+-- Seed Browser Operator provider auth integrations into the shared Nango-backed
+-- plugin catalog. These entries are auth/control-plane connections only:
+-- Browser Operator owns routing, profile affinity, policy, evidence, and
+-- commerce state; providers only supply optional execution credentials.
+
+INSERT INTO plugin_catalog (
+  slug, name, description, version, category,
+  tool_manifest, source, risk_level, verified, max_tools, is_published,
+  kind, transport, trust_level, execution_mode, auth_type, auth_provider
+) VALUES
+  (
+    'browserbase',
+    'Browserbase',
+    'Connect Browserbase credentials for optional Browser Operator hosted browser sessions, contexts, recordings, and provider fallback.',
+    '1.0.0',
+    'browser-operator',
+    '[]'::jsonb,
+    'first-party',
+    'write',
+    true,
+    0,
+    true,
+    'integration',
+    'nango',
+    'verified',
+    'in_process',
+    'api-key',
+    'browserbase'
+  ),
+  (
+    'steel',
+    'Steel',
+    'Connect Steel credentials for optional Browser Operator hosted sessions, profiles, proxy/CAPTCHA support, and commerce-grade browser fallback.',
+    '1.0.0',
+    'browser-operator',
+    '[]'::jsonb,
+    'first-party',
+    'write',
+    true,
+    0,
+    true,
+    'integration',
+    'nango',
+    'verified',
+    'in_process',
+    'api-key',
+    'steel'
+  ),
+  (
+    'browserless',
+    'Browserless',
+    'Connect Browserless credentials for optional remote-CDP Browser Operator capacity and read-only fallback sessions.',
+    '1.0.0',
+    'browser-operator',
+    '[]'::jsonb,
+    'first-party',
+    'write',
+    true,
+    0,
+    true,
+    'integration',
+    'nango',
+    'verified',
+    'in_process',
+    'api-key',
+    'browserless'
+  ),
+  (
+    'custom-browser-runtime',
+    'Custom Browser Runtime',
+    'Connect a customer-owned browser runtime or CDP provider for BYO Browser Operator capacity.',
+    '1.0.0',
+    'browser-operator',
+    '[]'::jsonb,
+    'first-party',
+    'write',
+    true,
+    0,
+    true,
+    'integration',
+    'nango',
+    'verified',
+    'in_process',
+    'api-key',
+    'custom-browser-runtime'
+  )
+ON CONFLICT (slug) DO UPDATE SET
+  name = EXCLUDED.name,
+  description = EXCLUDED.description,
+  category = EXCLUDED.category,
+  tool_manifest = EXCLUDED.tool_manifest,
+  source = EXCLUDED.source,
+  risk_level = EXCLUDED.risk_level,
+  verified = EXCLUDED.verified,
+  max_tools = EXCLUDED.max_tools,
+  is_published = EXCLUDED.is_published,
+  kind = EXCLUDED.kind,
+  transport = EXCLUDED.transport,
+  trust_level = EXCLUDED.trust_level,
+  execution_mode = EXCLUDED.execution_mode,
+  auth_type = EXCLUDED.auth_type,
+  auth_provider = EXCLUDED.auth_provider,
+  updated_at = now();

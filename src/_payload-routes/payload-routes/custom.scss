@@ -1,0 +1,6 @@
+// Lucid Studio theme overrides
+// Payload CSS is in @layer payload-default, so our styles have higher specificity
+
+:root {
+  --font-body: 'Inter', system-ui, sans-serif;
+}

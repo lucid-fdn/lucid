@@ -1,0 +1,130 @@
+{
+  "schemaVersion": "2026-05-07.lucid-pack.v1",
+  "key": "prospect-intelligence-starter",
+  "name": "Prospect Intelligence Starter",
+  "description": "A marketplace-ready starter Pack that researches target accounts, scores buying signals, and prepares a human-reviewed sales brief.",
+  "version": "1.0.0",
+  "resources": [
+    {
+      "key": "agent:prospect-intelligence-starter",
+      "kind": "agent",
+      "name": "Prospect Intelligence Starter",
+      "policy": "fork_on_edit",
+      "spec": {
+        "template_spec": {
+          "kind": "agent",
+          "system_prompt": "You are Prospect Intelligence Starter. Research target accounts from the supplied ICP, collect live source evidence, score each prospect from 1 to 5, and produce a human-reviewed brief. Never email, update CRM, enrich private data, or mutate external systems unless the installed workspace explicitly grants tools and approval.",
+          "model_hint": "strong",
+          "plugins": [
+            "brave-search"
+          ],
+          "memory_enabled": true,
+          "memory_strategy": "conservative",
+          "approval_required_tools": [
+            "crm.create_person",
+            "crm.create_deal",
+            "email.send"
+          ]
+        },
+        "params": [
+          {
+            "key": "COMPANY_NAME",
+            "label": "Company name",
+            "type": "text",
+            "required": true,
+            "placeholder": "Northstar Labs",
+            "hint": "Company running the prospecting workflow."
+          },
+          {
+            "key": "ICP_DESCRIPTION",
+            "label": "Ideal customer profile",
+            "type": "text",
+            "required": true,
+            "placeholder": "B2B SaaS teams with 50-500 employees and active hiring signals",
+            "hint": "Describe industry, size, geography, and buying signals."
+          }
+        ],
+        "preview_prompt": "Find five high-fit prospects for my ICP and explain the evidence.",
+        "deploy_contract": "pack_deploy_compatible"
+      }
+    },
+    {
+      "key": "routine:weekly-prospect-brief",
+      "kind": "routine",
+      "name": "Weekly prospect brief",
+      "policy": "managed",
+      "spec": {
+        "cadence": "weekly",
+        "prompt": "Prepare a fresh prospect intelligence brief with source evidence, score changes, and human-review next actions."
+      }
+    }
+  ],
+  "composition": {
+    "provides": [
+      {
+        "key": "template.prospect-intelligence-starter",
+        "kind": "agent",
+        "name": "Prospect Intelligence Starter",
+        "description": "Researches and scores prospect opportunities with evidence.",
+        "scope": "project",
+        "risk": "read_only",
+        "progress": {
+          "label": "Creating prospect intelligence agent",
+          "phase": "tool_running"
+        }
+      }
+    ],
+    "requires": [
+      {
+        "capability": "integration.brave-search",
+        "required": false,
+        "acceptedProviders": [
+          "brave-search"
+        ],
+        "reason": "Live web search improves the quality of prospect evidence."
+      }
+    ],
+    "optional": [
+      {
+        "capability": "integration.crm",
+        "required": false,
+        "acceptedProviders": [
+          "pipedrive",
+          "hubspot",
+          "salesforce"
+        ],
+        "reason": "CRM tools can be connected later for approved writeback."
+      }
+    ],
+    "conflicts": [],
+    "upgradesFrom": [],
+    "tags": [
+      "sales",
+      "prospecting",
+      "evidence",
+      "marketplace-example"
+    ]
+  },
+  "metadata": {
+    "product_surface": "template",
+    "template_type": "agent",
+    "template_family": "sales",
+    "backing_lifecycle": "lucid_pack",
+    "source": "community",
+    "status": "approved",
+    "is_public": true,
+    "tags": [
+      "sales",
+      "prospecting",
+      "evidence",
+      "marketplace-example"
+    ],
+    "preview_prompt": "Find five high-fit prospects for my ICP and explain the evidence.",
+    "install_count": 0,
+    "cert_status": "community",
+    "outcome_data": {
+      "recommended_first_run": "Ask for five high-fit prospects, require citations, and keep CRM/email writes in human review."
+    },
+    "conversion_version": "2026-05-13.template-pack.v1"
+  }
+}
