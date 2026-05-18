@@ -1,6 +1,7 @@
 import { LucidHttpClient, type LucidRequestOptions } from './fetcher.js'
 import {
   nativeActionDispatchResponseSchema,
+  nativeApprovalDetailResponseSchema,
   nativeApprovalDecisionResponseSchema,
   nativeApprovalExplainResponseSchema,
   nativeBootstrapSchema,
@@ -10,6 +11,7 @@ import {
   nativeInboxResponseSchema,
   nativePushRegistrationResponseSchema,
   nativeRunControlResponseSchema,
+  nativeRunDetailResponseSchema,
   nativeRunsResponseSchema,
   nativeSessionHandoffResponseSchema,
   nativeSessionRefreshResponseSchema,
@@ -18,6 +20,7 @@ import {
   nativeVoiceCommandResponseSchema,
   type NativeActionDispatchInput,
   type NativeActionDispatchResponse,
+  type NativeApprovalDetailResponse,
   type NativeApprovalDecisionInput,
   type NativeApprovalDecisionResponse,
   type NativeApprovalExplainResponse,
@@ -29,6 +32,7 @@ import {
   type NativePushRegistrationResponse,
   type NativeRunControlInput,
   type NativeRunControlResponse,
+  type NativeRunDetailResponse,
   type NativeRunsResponse,
   type NativeSessionHandoffInput,
   type NativeSessionHandoffResponse,
@@ -81,6 +85,14 @@ export class LucidAppClient {
 
   listRuns(): Promise<NativeRunsResponse> {
     return this.http.get('/api/native/runs', nativeRunsResponseSchema)
+  }
+
+  getRun(id: string): Promise<NativeRunDetailResponse> {
+    return this.http.get(`/api/native/runs/${encodeURIComponent(id)}`, nativeRunDetailResponseSchema)
+  }
+
+  getApproval(id: string): Promise<NativeApprovalDetailResponse> {
+    return this.http.get(`/api/native/approvals/${encodeURIComponent(id)}`, nativeApprovalDetailResponseSchema)
   }
 
   decideApproval(id: string, input: NativeApprovalDecisionInput): Promise<NativeApprovalDecisionResponse> {

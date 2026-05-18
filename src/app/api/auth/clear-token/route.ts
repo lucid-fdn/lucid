@@ -1,10 +1,19 @@
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import { authCache } from "@/lib/cache/service";
 import { ErrorService } from '@/lib/errors/error-service';
 
 export const dynamic = 'force-dynamic'
 
-export async function POST() {
+function getAuthCookieDomain(hostname: string): string | undefined {
+  const normalized = hostname.toLowerCase();
+  if (normalized === "lucid.foundation" || normalized.endsWith(".lucid.foundation")) {
+    return ".lucid.foundation";
+  }
+  return undefined;
+}
+
+export async function POST(req: NextRequest) {
   try {
     // Create response
     const response = NextResponse.json({ success: true });
@@ -19,9 +28,12 @@ export async function POST() {
       maxAge: 0, // This makes the cookie expire immediately
     };
 
-    // Only set domain in production (must match privy-login)
-    if (!isDev) {
-      cookieOptions.domain = ".lucid.foundation";
+    // Only use the shared cookie domain on Lucid-owned domains. Preview and
+    // Railway hosts need host-only cookies, otherwise browsers reject logout
+    // and login cookies because the domain does not match the request host.
+    const cookieDomain = isDev ? undefined : getAuthCookieDomain(req.nextUrl.hostname);
+    if (cookieDomain) {
+      cookieOptions.domain = cookieDomain;
     }
 
     const cookieNames = [

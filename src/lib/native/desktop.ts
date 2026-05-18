@@ -29,6 +29,7 @@ export type LucidDesktopApi = {
   appMode: 'production' | 'self-hosted' | 'development'
   openExternal(url: string): Promise<{ ok: true } | { ok: false; error: string }>
   notify(input: NativeNotificationInput): Promise<NativeNotificationResult>
+  captureClipboard(): Promise<{ ok: true; text: string } | { ok: false; error: string }>
   onDeepLink(callback: (url: string) => void): () => void
   getLaunchDeepLink(): Promise<string | null>
   setBadgeCount(count: number): Promise<void>
@@ -151,4 +152,10 @@ export async function openDesktopExternal(url: string): Promise<{ ok: true } | {
   const desktop = getLucidDesktopApi()
   if (!desktop) return { ok: false, error: 'desktop-runtime-unavailable' }
   return desktop.openExternal(url)
+}
+
+export async function captureDesktopClipboard(): Promise<{ ok: true; text: string } | { ok: false; error: string }> {
+  const desktop = getLucidDesktopApi()
+  if (!desktop) return { ok: false, error: 'desktop-runtime-unavailable' }
+  return desktop.captureClipboard()
 }

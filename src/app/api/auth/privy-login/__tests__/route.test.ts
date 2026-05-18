@@ -115,4 +115,29 @@ describe('privy login route', () => {
     expect(setCookie).toContain('Domain=.lucid.foundation')
     expect(setCookie).toContain('Secure')
   })
+
+  it('uses a host-only cookie on Railway preview/prod hosts', async () => {
+    mockVerifyAuthToken.mockResolvedValue({ userId: 'did:privy:user-1' })
+    mockSingle.mockResolvedValue({
+      data: { user_id: 'internal-user-1' },
+      error: null,
+    })
+
+    const request = new NextRequest('https://lucid-production-e9b8.up.railway.app/api/auth/privy-login', {
+      method: 'POST',
+      headers: {
+        authorization: 'Bearer privy.jwt.token',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ walletAddress: null }),
+    })
+
+    const response = await POST(request)
+
+    expect(response.status).toBe(200)
+    const setCookie = response.headers.get('set-cookie') || ''
+    expect(setCookie).toContain('lucid-auth-token=privy.jwt.token')
+    expect(setCookie).not.toContain('Domain=')
+    expect(setCookie).toContain('Secure')
+  })
 })
