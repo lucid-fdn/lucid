@@ -46,6 +46,22 @@ function PrivyLoginContent() {
 
   useEffect(() => {
     if (ready && authenticated) {
+      const nativeHandoff = searchParams?.get('native_handoff')
+      if (nativeHandoff) {
+        fetch(`/api/native/session/handoff/${encodeURIComponent(nativeHandoff)}/complete`, {
+          method: 'POST',
+          credentials: 'include',
+        })
+          .then((response) => response.json())
+          .then((payload: { redirectUrl?: string }) => {
+            window.location.assign(payload.redirectUrl ?? '/dashboard')
+          })
+          .catch(() => {
+            router.push('/dashboard')
+          })
+        return
+      }
+
       const pendingUpgrade = getPendingUpgrade()
       if (pendingUpgrade) {
         clearPendingUpgrade()
@@ -135,6 +151,22 @@ function LocalLoginContent() {
 
   useEffect(() => {
     if (isAuthenticated) {
+      const nativeHandoff = searchParams?.get('native_handoff')
+      if (nativeHandoff) {
+        fetch(`/api/native/session/handoff/${encodeURIComponent(nativeHandoff)}/complete`, {
+          method: 'POST',
+          credentials: 'include',
+        })
+          .then((response) => response.json())
+          .then((payload: { redirectUrl?: string }) => {
+            window.location.assign(payload.redirectUrl ?? '/dashboard')
+          })
+          .catch(() => {
+            router.push('/dashboard')
+          })
+        return
+      }
+
       const next = searchParams?.get('next')
       router.push(next && next.startsWith('/') ? next : '/dashboard')
     }

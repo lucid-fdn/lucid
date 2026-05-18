@@ -152,6 +152,25 @@ export const nativeSessionHandoffResponseSchema = z
 export type NativeSessionHandoffInput = z.input<typeof nativeSessionHandoffInputSchema>
 export type NativeSessionHandoffResponse = z.infer<typeof nativeSessionHandoffResponseSchema>
 
+export const nativeSessionHandoffCompleteResponseSchema = z
+  .object({
+    handoffId: z.string().min(1),
+    status: z.enum(['completed', 'expired']),
+    redirectUrl: z.string().url(),
+    expiresAt: z.string(),
+  })
+  .strict()
+
+export const nativeSessionExchangeInputSchema = z
+  .object({
+    handoffId: z.string().min(1),
+    exchangeToken: z.string().min(1).max(4096),
+    deviceName: z.string().min(1).max(200).optional(),
+    appVersion: z.string().min(1).max(80).optional(),
+    osVersion: z.string().min(1).max(120).optional(),
+  })
+  .strict()
+
 export const nativeSessionRefreshInputSchema = z
   .object({
     deviceId: z.string().uuid(),
@@ -184,6 +203,8 @@ export const nativeSessionRevokeResponseSchema = z
 
 export type NativeSessionRefreshInput = z.input<typeof nativeSessionRefreshInputSchema>
 export type NativeSessionRefreshResponse = z.infer<typeof nativeSessionRefreshResponseSchema>
+export type NativeSessionHandoffCompleteResponse = z.infer<typeof nativeSessionHandoffCompleteResponseSchema>
+export type NativeSessionExchangeInput = z.input<typeof nativeSessionExchangeInputSchema>
 export type NativeSessionRevokeInput = z.input<typeof nativeSessionRevokeInputSchema>
 export type NativeSessionRevokeResponse = z.infer<typeof nativeSessionRevokeResponseSchema>
 

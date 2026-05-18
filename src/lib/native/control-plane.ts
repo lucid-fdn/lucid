@@ -16,7 +16,9 @@ import type {
   NativeRunControlResponse,
   NativeRunDetailResponse,
   NativeRunTimelineEvent,
+  NativeSessionExchangeInput,
   NativeSessionHandoffInput,
+  NativeSessionHandoffCompleteResponse,
   NativeSessionHandoffResponse,
   NativeSessionRefreshInput,
   NativeSessionRefreshResponse,
@@ -28,14 +30,23 @@ import type {
 } from '@lucid/app-client'
 
 import {
+  completeNativeSessionHandoffRow,
+  controlAgentOpsNativeRun,
   createNativeSessionHandoffRow,
   createNativeVoiceCommandRow,
   controlNativeRunRow,
+  decideMissionControlNativeApproval,
   decideNativeApprovalRow,
+  exchangeNativeSessionHandoffRow,
+  getAgentOpsNativeRun,
+  getMissionControlNativeApproval,
   getNativeApprovalRow,
   getNativeRunRow,
   hasConfiguredSupabase,
   isNativeControlPlanePersistenceUnavailable,
+  listAgentOpsNativeRunEvents,
+  listAgentOpsNativeRuns,
+  listMissionControlNativeApprovals,
   listNativeApprovalsRows,
   listNativeRunEventRows,
   listNativeRunRows,
@@ -146,6 +157,58 @@ export async function createNativeSessionHandoff(
   }
 }
 
+export async function completeNativeSessionHandoff(
+  userId: string,
+  handoffId: string,
+): Promise<NativeSessionHandoffCompleteResponse> {
+  if (hasConfiguredSupabase()) {
+    try {
+      return await completeNativeSessionHandoffRow(userId, handoffId)
+    } catch (error) {
+      if (!isNativeControlPlanePersistenceUnavailable(error)) throw error
+    }
+  }
+
+  const redirectUrl = new URL('lucid://auth/native')
+  redirectUrl.searchParams.set('native_handoff', handoffId)
+  redirectUrl.searchParams.set('exchange_token', id('native_exchange'))
+  redirectUrl.searchParams.set('status', 'completed')
+
+  return {
+    handoffId,
+    status: 'completed',
+    redirectUrl: redirectUrl.toString(),
+    expiresAt: new Date(Date.now() + 10 * 60_000).toISOString(),
+  }
+}
+
+export async function exchangeNativeSessionHandoff(
+  input: NativeSessionExchangeInput,
+): Promise<NativeSessionRefreshResponse> {
+  if (hasConfiguredSupabase()) {
+    try {
+      return await exchangeNativeSessionHandoffRow(input)
+    } catch (error) {
+      if (!isNativeControlPlanePersistenceUnavailable(error)) throw error
+    }
+  }
+
+  const deviceId = crypto.randomUUID()
+  const refreshToken = id('native_refresh')
+  refreshTokens.set(refreshToken, {
+    userId: 'development-native-user',
+    deviceId,
+    revoked: false,
+  })
+
+  return {
+    accessToken: id('native_access'),
+    refreshToken,
+    expiresAt: new Date(Date.now() + 60 * 60_000).toISOString(),
+    deviceId,
+  }
+}
+
 export async function refreshNativeSession(
   userId: string,
   input: NativeSessionRefreshInput,
@@ -197,12 +260,15 @@ export async function revokeNativeSession(userId: string, input: NativeSessionRe
 export async function listNativeInbox(userId: string): Promise<NativeInboxResponse> {
   if (hasConfiguredSupabase()) {
     try {
-      const [approvals, allRuns] = await Promise.all([
+      const [approvals, missionControlApprovals, persistedRuns, agentOpsRuns] = await Promise.all([
         listNativeApprovalsRows(userId),
+        listMissionControlNativeApprovals(userId),
         listNativeRunRows(userId),
+        listAgentOpsNativeRuns(userId),
       ])
+      const allRuns = [...persistedRuns, ...agentOpsRuns]
       return {
-        approvals,
+        approvals: [...approvals, ...missionControlApprovals],
         runs: allRuns.filter((run) => run.needsApproval || run.status === 'blocked'),
       }
     } catch (error) {
@@ -220,7 +286,15 @@ export async function listNativeInbox(userId: string): Promise<NativeInboxRespon
 export async function listNativeRuns(userId: string): Promise<{ runs: NativeRun[] }> {
   if (hasConfiguredSupabase()) {
     try {
-      return { runs: await listNativeRunRows(userId) }
+      const [persistedRuns, agentOpsRuns] = await Promise.all([
+        listNativeRunRows(userId),
+        listAgentOpsNativeRuns(userId),
+      ])
+      return {
+        runs: [...persistedRuns, ...agentOpsRuns].sort(
+          (left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime(),
+        ),
+      }
     } catch (error) {
       if (!isNativeControlPlanePersistenceUnavailable(error)) throw error
     }
@@ -238,6 +312,7 @@ export async function getNativeApprovalDetail(
   if (hasConfiguredSupabase()) {
     try {
       approval = await getNativeApprovalRow(userId, approvalId)
+      approval ??= await getMissionControlNativeApproval(userId, approvalId)
     } catch (error) {
       if (!isNativeControlPlanePersistenceUnavailable(error)) throw error
     }
@@ -257,6 +332,10 @@ export async function getNativeRunDetail(userId: string, runId: string): Promise
     try {
       run = await getNativeRunRow(userId, runId)
       if (run) persistedTimeline = await listNativeRunEventRows(userId, runId)
+      if (!run) {
+        run = await getAgentOpsNativeRun(userId, runId)
+        if (run) persistedTimeline = await listAgentOpsNativeRunEvents(userId, runId)
+      }
     } catch (error) {
       if (!isNativeControlPlanePersistenceUnavailable(error)) throw error
     }
@@ -297,7 +376,10 @@ export async function decideNativeApproval(
 
   if (hasConfiguredSupabase()) {
     try {
-      approval = await decideNativeApprovalRow(userId, approvalId, input)
+      approval = approvalId.startsWith('mc:')
+        ? await decideMissionControlNativeApproval(userId, approvalId, input)
+        : await decideNativeApprovalRow(userId, approvalId, input)
+      approval ??= await decideMissionControlNativeApproval(userId, approvalId, input)
       if (!approval) throw new Error('Native approval not found.')
       const receipt = await recordNativeActionReceipt(userId, {
         featureId: 'approvalWallet',
@@ -339,7 +421,10 @@ export async function controlNativeRun(
 
   if (hasConfiguredSupabase()) {
     try {
-      run = await controlNativeRunRow(userId, runId, input)
+      run = runId.startsWith('agentops:')
+        ? await controlAgentOpsNativeRun(userId, runId, input)
+        : await controlNativeRunRow(userId, runId, input)
+      run ??= await controlAgentOpsNativeRun(userId, runId, input)
       if (!run) throw new Error('Native run not found.')
       const receipt = await recordNativeActionReceipt(userId, {
         featureId: 'liveRunControl',

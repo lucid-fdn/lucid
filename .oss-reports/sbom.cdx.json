@@ -2,10 +2,10 @@
   "$schema": "http://cyclonedx.org/schema/bom-1.5.schema.json",
   "bomFormat": "CycloneDX",
   "specVersion": "1.5",
-  "serialNumber": "urn:uuid:b28b4e3d-26ca-44f2-86fa-988eed24514a",
+  "serialNumber": "urn:uuid:36becc41-de81-48a4-a9f1-7864611fbe4a",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-05-18T15:07:25.764Z",
+    "timestamp": "2026-05-18T16:06:50.308Z",
     "lifecycles": [
       {
         "phase": "pre-build"
@@ -37990,12 +37990,12 @@
       ]
     },
     {
-      "bom-ref": "@unrs/resolver-binding-android-arm-eabi@1.11.1",
+      "bom-ref": "@unrs/resolver-binding-android-arm-eabi@1.12.0",
       "type": "library",
       "name": "@unrs/resolver-binding-android-arm-eabi",
-      "version": "1.11.1",
+      "version": "1.12.0",
       "scope": "optional",
-      "purl": "pkg:npm/%40unrs/resolver-binding-android-arm-eabi@1.11.1",
+      "purl": "pkg:npm/%40unrs/resolver-binding-android-arm-eabi@1.12.0",
       "properties": [
         {
           "name": "cdx:npm:package:development",
@@ -38005,13 +38005,13 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@unrs/resolver-binding-android-arm-eabi/-/resolver-binding-android-arm-eabi-1.11.1.tgz"
+          "url": "https://registry.npmjs.org/@unrs/resolver-binding-android-arm-eabi/-/resolver-binding-android-arm-eabi-1.12.0.tgz"
         }
       ],
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "a692d15201d5686456531d11d14b74e8c8e8f6005a064837bfff00c6eb062e1b08a2d6c12ee464e75ac0cea2c2f20aba372c80a23117825363cdfe91f78f0337"
+          "content": "166209e41ab6514ae98f64eb2623afb5fbe087df10a81dcf295a96ac7a744ab62a94d4a5721e185d3a2288d2be9924cd15eb34ec38a9cd3fc9a4922af31b0eae"
         }
       ],
       "licenses": [
@@ -38023,12 +38023,12 @@
       ]
     },
     {
-      "bom-ref": "@unrs/resolver-binding-android-arm64@1.11.1",
+      "bom-ref": "@unrs/resolver-binding-android-arm64@1.12.0",
       "type": "library",
       "name": "@unrs/resolver-binding-android-arm64",
-      "version": "1.11.1",
+      "version": "1.12.0",
       "scope": "optional",
-      "purl": "pkg:npm/%40unrs/resolver-binding-android-arm64@1.11.1",
+      "purl": "pkg:npm/%40unrs/resolver-binding-android-arm64@1.12.0",
       "properties": [
         {
           "name": "cdx:npm:package:development",
@@ -38038,13 +38038,13 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@unrs/resolver-binding-android-arm64/-/resolver-binding-android-arm64-1.11.1.tgz"
+          "url": "https://registry.npmjs.org/@unrs/resolver-binding-android-arm64/-/resolver-binding-android-arm64-1.12.0.tgz"
         }
       ],
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "942c6456d6f8c29d6ff84a0df878c81bd7082333e45f93ad334de9418906f94e4eff02f9dcb0b841b21e6b38222aa96e19e5447819596a11da942681bd4d5ada"
+          "content": "5ea13bb13b8ce30aae8a24a9b430b5f3fed2461e4b3908668d182eee3eb94fe9bb94fd05cc9425d1f48bf9977b6804d525c895a5c3649349a5e21330012bdf5d"
         }
       ],
       "licenses": [
@@ -38056,12 +38056,12 @@
       ]
     },
     {
-      "bom-ref": "@unrs/resolver-binding-darwin-arm64@1.11.1",
+      "bom-ref": "@unrs/resolver-binding-darwin-arm64@1.12.0",
       "type": "library",
       "name": "@unrs/resolver-binding-darwin-arm64",
-      "version": "1.11.1",
+      "version": "1.12.0",
       "scope": "optional",
-      "purl": "pkg:npm/%40unrs/resolver-binding-darwin-arm64@1.11.1",
+      "purl": "pkg:npm/%40unrs/resolver-binding-darwin-arm64@1.12.0",
       "properties": [
         {
           "name": "cdx:npm:package:development",
@@ -38071,13 +38071,13 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@unrs/resolver-binding-darwin-arm64/-/resolver-binding-darwin-arm64-1.11.1.tgz"
+          "url": "https://registry.npmjs.org/@unrs/resolver-binding-darwin-arm64/-/resolver-binding-darwin-arm64-1.12.0.tgz"
         }
       ],
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "80f540d548d1bb563f22c07f75012ca76575a66e3839febe2d6bdb2dcf520e4d5cd8a8610d10c152440261559ee9fdbab896f77ce2bcb1a58c82d5fc22b324de"
+          "content": "eda39f2ce198221dd686fcefe9f8b76c0f5a8fcb6e7fb5c361bcd3b6c31e5e2c5d4462d3ea5b91d61b4149b8ef597c829f84db2a0cf94836b981445876533419"
         }
       ],
       "licenses": [
@@ -38089,12 +38089,12 @@
       ]
     },
     {
-      "bom-ref": "@unrs/resolver-binding-darwin-x64@1.11.1",
+      "bom-ref": "@unrs/resolver-binding-darwin-x64@1.12.0",
       "type": "library",
       "name": "@unrs/resolver-binding-darwin-x64",
-      "version": "1.11.1",
+      "version": "1.12.0",
       "scope": "optional",
-      "purl": "pkg:npm/%40unrs/resolver-binding-darwin-x64@1.11.1",
+      "purl": "pkg:npm/%40unrs/resolver-binding-darwin-x64@1.12.0",
       "properties": [
         {
           "name": "cdx:npm:package:development",
@@ -38104,13 +38104,13 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@unrs/resolver-binding-darwin-x64/-/resolver-binding-darwin-x64-1.11.1.tgz"
+          "url": "https://registry.npmjs.org/@unrs/resolver-binding-darwin-x64/-/resolver-binding-darwin-x64-1.12.0.tgz"
         }
       ],
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "705ccfeeb58a777959682b03cded3b417d520b6e253bc98fb72f6f74ff9855adcc19d5603e615ce7ddf5edbda2a17b6008c2868822f12781d0b3ada8cfa19f45"
+          "content": "d8d8870626d75c30819e3a73a701e8ab816cea4bedf50603eab6af340dc3f0a41a2abeebd2abba0b2bea25f0cb62cb228c24acd94c049a429c0260b13ff1ce5c"
         }
       ],
       "licenses": [
@@ -38122,12 +38122,12 @@
       ]
     },
     {
-      "bom-ref": "@unrs/resolver-binding-freebsd-x64@1.11.1",
+      "bom-ref": "@unrs/resolver-binding-freebsd-x64@1.12.0",
       "type": "library",
       "name": "@unrs/resolver-binding-freebsd-x64",
-      "version": "1.11.1",
+      "version": "1.12.0",
       "scope": "optional",
-      "purl": "pkg:npm/%40unrs/resolver-binding-freebsd-x64@1.11.1",
+      "purl": "pkg:npm/%40unrs/resolver-binding-freebsd-x64@1.12.0",
       "properties": [
         {
           "name": "cdx:npm:package:development",
@@ -38137,13 +38137,13 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@unrs/resolver-binding-freebsd-x64/-/resolver-binding-freebsd-x64-1.11.1.tgz"
+          "url": "https://registry.npmjs.org/@unrs/resolver-binding-freebsd-x64/-/resolver-binding-freebsd-x64-1.12.0.tgz"
         }
       ],
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "7eab4681a937cd7e03081e8f169b07e7e2a6b7ff02222e01af2e2b6f5868e80bf64074d110cfb8ef2dbcd94aa2bb76511792108a8250e6a59157a8ddb80fa21b"
+          "content": "c7f935572d50a03ace60b273420dbf5ac44640f4b449ac386dab0aaa36434253dd912029b2f0dd07d87ca1140351324209acd296a2e6f91cbd35016526271a71"
         }
       ],
       "licenses": [
@@ -38155,12 +38155,12 @@
       ]
     },
     {
-      "bom-ref": "@unrs/resolver-binding-linux-arm-gnueabihf@1.11.1",
+      "bom-ref": "@unrs/resolver-binding-linux-arm-gnueabihf@1.12.0",
       "type": "library",
       "name": "@unrs/resolver-binding-linux-arm-gnueabihf",
-      "version": "1.11.1",
+      "version": "1.12.0",
       "scope": "optional",
-      "purl": "pkg:npm/%40unrs/resolver-binding-linux-arm-gnueabihf@1.11.1",
+      "purl": "pkg:npm/%40unrs/resolver-binding-linux-arm-gnueabihf@1.12.0",
       "properties": [
         {
           "name": "cdx:npm:package:development",
@@ -38170,13 +38170,13 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@unrs/resolver-binding-linux-arm-gnueabihf/-/resolver-binding-linux-arm-gnueabihf-1.11.1.tgz"
+          "url": "https://registry.npmjs.org/@unrs/resolver-binding-linux-arm-gnueabihf/-/resolver-binding-linux-arm-gnueabihf-1.12.0.tgz"
         }
       ],
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "bbdda6be5718b69f4c44a98ff99bcc9ad3cddf8fbfde5307972323ef05c90de5f1b8cd15833cf4f8f3c936cae8d66dc864f602848927f78e305bc4d88062851f"
+          "content": "cee1ebbb1a9e989a8cda5ad5c08830ee8dffd2b2ebb24583a9544073cf7be27372ddc651d8df5c7dab481393f399235e45269f874ac0692ddebf6f78c82ca3ec"
         }
       ],
       "licenses": [
@@ -38188,12 +38188,12 @@
       ]
     },
     {
-      "bom-ref": "@unrs/resolver-binding-linux-arm-musleabihf@1.11.1",
+      "bom-ref": "@unrs/resolver-binding-linux-arm-musleabihf@1.12.0",
       "type": "library",
       "name": "@unrs/resolver-binding-linux-arm-musleabihf",
-      "version": "1.11.1",
+      "version": "1.12.0",
       "scope": "optional",
-      "purl": "pkg:npm/%40unrs/resolver-binding-linux-arm-musleabihf@1.11.1",
+      "purl": "pkg:npm/%40unrs/resolver-binding-linux-arm-musleabihf@1.12.0",
       "properties": [
         {
           "name": "cdx:npm:package:development",
@@ -38203,13 +38203,13 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@unrs/resolver-binding-linux-arm-musleabihf/-/resolver-binding-linux-arm-musleabihf-1.11.1.tgz"
+          "url": "https://registry.npmjs.org/@unrs/resolver-binding-linux-arm-musleabihf/-/resolver-binding-linux-arm-musleabihf-1.12.0.tgz"
         }
       ],
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "70835aa18db3ecb542adf1e421c9af8fba2c4ceb66e95553d7a6f9a10752e1b7a26d7d92601c2060b9aa8418c0d6de7509aad2681b97e5836c58b8eca9f5b90b"
+          "content": "b365a02905d05e1575e0e4f78cda12d6337873ef0cbda9b1aba8c6dcbec8825f2d79768666f8c8dd17d992caa8c4bdd40048a7f54919480a5767eb21a1c23565"
         }
       ],
       "licenses": [
@@ -38221,12 +38221,12 @@
       ]
     },
     {
-      "bom-ref": "@unrs/resolver-binding-linux-arm64-gnu@1.11.1",
+      "bom-ref": "@unrs/resolver-binding-linux-arm64-gnu@1.12.0",
       "type": "library",
       "name": "@unrs/resolver-binding-linux-arm64-gnu",
-      "version": "1.11.1",
+      "version": "1.12.0",
       "scope": "optional",
-      "purl": "pkg:npm/%40unrs/resolver-binding-linux-arm64-gnu@1.11.1",
+      "purl": "pkg:npm/%40unrs/resolver-binding-linux-arm64-gnu@1.12.0",
       "properties": [
         {
           "name": "cdx:npm:package:development",
@@ -38236,13 +38236,13 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@unrs/resolver-binding-linux-arm64-gnu/-/resolver-binding-linux-arm64-gnu-1.11.1.tgz"
+          "url": "https://registry.npmjs.org/@unrs/resolver-binding-linux-arm64-gnu/-/resolver-binding-linux-arm64-gnu-1.12.0.tgz"
         }
       ],
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "df8830ecf8c3181f4981e3c9126844a81856bc28a2582b97b0bf6162984317b72b5bb520234e60c81022e8c179f2e19c30e88ea92276c9b11e0af1dcab404299"
+          "content": "821316971c5adda096f6c939169ceb4d74a8fcd49a9cab3f468bc36a5e6af93d90f9d00a2c5c865d6990e8000cb25ea4fd38171f0fa38fd43db042cbc7d99f27"
         }
       ],
       "licenses": [
@@ -38254,12 +38254,12 @@
       ]
     },
     {
-      "bom-ref": "@unrs/resolver-binding-linux-arm64-musl@1.11.1",
+      "bom-ref": "@unrs/resolver-binding-linux-arm64-musl@1.12.0",
       "type": "library",
       "name": "@unrs/resolver-binding-linux-arm64-musl",
-      "version": "1.11.1",
+      "version": "1.12.0",
       "scope": "optional",
-      "purl": "pkg:npm/%40unrs/resolver-binding-linux-arm64-musl@1.11.1",
+      "purl": "pkg:npm/%40unrs/resolver-binding-linux-arm64-musl@1.12.0",
       "properties": [
         {
           "name": "cdx:npm:package:development",
@@ -38269,13 +38269,13 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@unrs/resolver-binding-linux-arm64-musl/-/resolver-binding-linux-arm64-musl-1.11.1.tgz"
+          "url": "https://registry.npmjs.org/@unrs/resolver-binding-linux-arm64-musl/-/resolver-binding-linux-arm64-musl-1.12.0.tgz"
         }
       ],
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "472308c7a51fe778613ad24321a9926d3b2403df6c3c74bdeb0c5513f6c9b5e3c926da5d2865ced7063dd2845d5ee60e18e4eeaa34fc00271c31ce0ae90993df"
+          "content": "95d39a293cd73481e31b346dce07e1fa0ea6aaddf443c86747e10575f78a6207ae32a9f0b25964e8868dda469dbee45140d06bd72708e39a66806039114c73b8"
         }
       ],
       "licenses": [
@@ -38287,12 +38287,12 @@
       ]
     },
     {
-      "bom-ref": "@unrs/resolver-binding-linux-ppc64-gnu@1.11.1",
+      "bom-ref": "@unrs/resolver-binding-linux-ppc64-gnu@1.12.0",
       "type": "library",
       "name": "@unrs/resolver-binding-linux-ppc64-gnu",
-      "version": "1.11.1",
+      "version": "1.12.0",
       "scope": "optional",
-      "purl": "pkg:npm/%40unrs/resolver-binding-linux-ppc64-gnu@1.11.1",
+      "purl": "pkg:npm/%40unrs/resolver-binding-linux-ppc64-gnu@1.12.0",
       "properties": [
         {
           "name": "cdx:npm:package:development",
@@ -38302,13 +38302,13 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@unrs/resolver-binding-linux-ppc64-gnu/-/resolver-binding-linux-ppc64-gnu-1.11.1.tgz"
+          "url": "https://registry.npmjs.org/@unrs/resolver-binding-linux-ppc64-gnu/-/resolver-binding-linux-ppc64-gnu-1.12.0.tgz"
         }
       ],
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "0fc55a7bbe00e3f6be9991f415b3a41492fd0d22b647a4c53c2f4cfa30966226bfab67a29c2b9b5f5d2979ca438939a4255507fb2f0adc1642972703f2709284"
+          "content": "3d0463592cf9bfeecaf421e1f1ad75b7a2477e6b86da8de8cc7823ffd22c12d48c05cfd2f29f1e66824ed3e8bb154ab42448e721f2d12d40035ce17fda3c7849"
         }
       ],
       "licenses": [
@@ -38320,12 +38320,12 @@
       ]
     },
     {
-      "bom-ref": "@unrs/resolver-binding-linux-riscv64-gnu@1.11.1",
+      "bom-ref": "@unrs/resolver-binding-linux-riscv64-gnu@1.12.0",
       "type": "library",
       "name": "@unrs/resolver-binding-linux-riscv64-gnu",
-      "version": "1.11.1",
+      "version": "1.12.0",
       "scope": "optional",
-      "purl": "pkg:npm/%40unrs/resolver-binding-linux-riscv64-gnu@1.11.1",
+      "purl": "pkg:npm/%40unrs/resolver-binding-linux-riscv64-gnu@1.12.0",
       "properties": [
         {
           "name": "cdx:npm:package:development",
@@ -38335,13 +38335,13 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@unrs/resolver-binding-linux-riscv64-gnu/-/resolver-binding-linux-riscv64-gnu-1.11.1.tgz"
+          "url": "https://registry.npmjs.org/@unrs/resolver-binding-linux-riscv64-gnu/-/resolver-binding-linux-riscv64-gnu-1.12.0.tgz"
         }
       ],
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "7ebc4be0eaf3396555b0e73debe5776aa4c8425d4ed938e013157810a811634f4027d95e669120f0093da6169d6ee5f4040e24f14e6ab6f31241018699a26a71"
+          "content": "b25a5052e029dfe2348ec1721f105aa844d949ef3e39a1b4d7d9c3382043d19a9948dbf4cfb94c5ca0e0a47f41b120fed59e414af5754146d64bf31b1b1a48f8"
         }
       ],
       "licenses": [
@@ -38353,12 +38353,12 @@
       ]
     },
     {
-      "bom-ref": "@unrs/resolver-binding-linux-riscv64-musl@1.11.1",
+      "bom-ref": "@unrs/resolver-binding-linux-riscv64-musl@1.12.0",
       "type": "library",
       "name": "@unrs/resolver-binding-linux-riscv64-musl",
-      "version": "1.11.1",
+      "version": "1.12.0",
       "scope": "optional",
-      "purl": "pkg:npm/%40unrs/resolver-binding-linux-riscv64-musl@1.11.1",
+      "purl": "pkg:npm/%40unrs/resolver-binding-linux-riscv64-musl@1.12.0",
       "properties": [
         {
           "name": "cdx:npm:package:development",
@@ -38368,13 +38368,13 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@unrs/resolver-binding-linux-riscv64-musl/-/resolver-binding-linux-riscv64-musl-1.11.1.tgz"
+          "url": "https://registry.npmjs.org/@unrs/resolver-binding-linux-riscv64-musl/-/resolver-binding-linux-riscv64-musl-1.12.0.tgz"
         }
       ],
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "989e6fb8368867e97f69cbf4d6c1e85dfa67cab34a3a4ff7683a0474b3bf5ed9fd1ee6650c3ea32b11e590df19856c8b26c441c5fbfd198336bad43548284a7b"
+          "content": "bf7d1edf56931437e5d51f8e9f9ddc369778b0c43e9736131387715626b507ef83b3edbb9446523a5c233df3cddb49b16fd10d8acd66c145bee523ba3b35c970"
         }
       ],
       "licenses": [
@@ -38386,12 +38386,12 @@
       ]
     },
     {
-      "bom-ref": "@unrs/resolver-binding-linux-s390x-gnu@1.11.1",
+      "bom-ref": "@unrs/resolver-binding-linux-s390x-gnu@1.12.0",
       "type": "library",
       "name": "@unrs/resolver-binding-linux-s390x-gnu",
-      "version": "1.11.1",
+      "version": "1.12.0",
       "scope": "optional",
-      "purl": "pkg:npm/%40unrs/resolver-binding-linux-s390x-gnu@1.11.1",
+      "purl": "pkg:npm/%40unrs/resolver-binding-linux-s390x-gnu@1.12.0",
       "properties": [
         {
           "name": "cdx:npm:package:development",
@@ -38401,13 +38401,13 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@unrs/resolver-binding-linux-s390x-gnu/-/resolver-binding-linux-s390x-gnu-1.11.1.tgz"
+          "url": "https://registry.npmjs.org/@unrs/resolver-binding-linux-s390x-gnu/-/resolver-binding-linux-s390x-gnu-1.12.0.tgz"
         }
       ],
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "9042e8f1e6c156d6fdb00eeb31ed42a61e101eb781ca1699d901000ddf4dcc842c60d429b7d52433d8aaaf69611abe5a7e1f3ce5dfdc07941e4d749b6474d83e"
+          "content": "ca7e9c9c38681f520e818bcb9d37aeee201fd6292773b4978eac8b3c2af7ba66da7ae143f14cb6c7773717cdb1d920d5117fc9a4490018d775f25501c38c3d69"
         }
       ],
       "licenses": [
@@ -38419,12 +38419,12 @@
       ]
     },
     {
-      "bom-ref": "@unrs/resolver-binding-linux-x64-gnu@1.11.1",
+      "bom-ref": "@unrs/resolver-binding-linux-x64-gnu@1.12.0",
       "type": "library",
       "name": "@unrs/resolver-binding-linux-x64-gnu",
-      "version": "1.11.1",
+      "version": "1.12.0",
       "scope": "optional",
-      "purl": "pkg:npm/%40unrs/resolver-binding-linux-x64-gnu@1.11.1",
+      "purl": "pkg:npm/%40unrs/resolver-binding-linux-x64-gnu@1.12.0",
       "properties": [
         {
           "name": "cdx:npm:package:development",
@@ -38434,13 +38434,13 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@unrs/resolver-binding-linux-x64-gnu/-/resolver-binding-linux-x64-gnu-1.11.1.tgz"
+          "url": "https://registry.npmjs.org/@unrs/resolver-binding-linux-x64-gnu/-/resolver-binding-linux-x64-gnu-1.12.0.tgz"
         }
       ],
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "0b76401ee80a828bd5e58bc032cc61ab482d5eec0449429ce4c844b630692e81cf2d833e8aec128f795f945c0adc33e6ebcebad2b67b1bc04c7304aba3b843e7"
+          "content": "334cd44d722845b3dd5a62ceb3c846dc29cb54a4cc6dc0240b5fbe189ce32c09467c7e60be16de3daebe4c59e24e0aa28b31abd3fddf75723b47c68dc32fcde2"
         }
       ],
       "licenses": [
@@ -38452,12 +38452,12 @@
       ]
     },
     {
-      "bom-ref": "@unrs/resolver-binding-linux-x64-musl@1.11.1",
+      "bom-ref": "@unrs/resolver-binding-linux-x64-musl@1.12.0",
       "type": "library",
       "name": "@unrs/resolver-binding-linux-x64-musl",
-      "version": "1.11.1",
+      "version": "1.12.0",
       "scope": "optional",
-      "purl": "pkg:npm/%40unrs/resolver-binding-linux-x64-musl@1.11.1",
+      "purl": "pkg:npm/%40unrs/resolver-binding-linux-x64-musl@1.12.0",
       "properties": [
         {
           "name": "cdx:npm:package:development",
@@ -38467,13 +38467,13 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@unrs/resolver-binding-linux-x64-musl/-/resolver-binding-linux-x64-musl-1.11.1.tgz"
+          "url": "https://registry.npmjs.org/@unrs/resolver-binding-linux-x64-musl/-/resolver-binding-linux-x64-musl-1.12.0.tgz"
         }
       ],
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "ad5d184a8ca12b69d9e2f12cc13fd0c2acea417c3923a0a3a1a60c397d13a819568688d47fc3fde26bc8ee7b894de68292476cdd0138fb34bc2a8f86757b99b4"
+          "content": "18953044e7b6daa55a94477b2514fb146feedfa22ffc82fd01e751c3ba4475b73c29c7db38373282f4070158a004545eca5c8b7bc5243d8c49cbb1794a6f8b77"
         }
       ],
       "licenses": [
@@ -38485,12 +38485,45 @@
       ]
     },
     {
-      "bom-ref": "@unrs/resolver-binding-wasm32-wasi@1.11.1",
+      "bom-ref": "@unrs/resolver-binding-openharmony-arm64@1.12.0",
+      "type": "library",
+      "name": "@unrs/resolver-binding-openharmony-arm64",
+      "version": "1.12.0",
+      "scope": "optional",
+      "purl": "pkg:npm/%40unrs/resolver-binding-openharmony-arm64@1.12.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:development",
+          "value": "true"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@unrs/resolver-binding-openharmony-arm64/-/resolver-binding-openharmony-arm64-1.12.0.tgz"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "53022480e6a9631ad23dff0a4ceb577992890faf6ea4cf61410badcb55b4c10009c2c66b2525c5128c6e27a95c8e6129fe226fc793d492732aa815c99733d3cb"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@unrs/resolver-binding-wasm32-wasi@1.12.0",
       "type": "library",
       "name": "@unrs/resolver-binding-wasm32-wasi",
-      "version": "1.11.1",
+      "version": "1.12.0",
       "scope": "optional",
-      "purl": "pkg:npm/%40unrs/resolver-binding-wasm32-wasi@1.11.1",
+      "purl": "pkg:npm/%40unrs/resolver-binding-wasm32-wasi@1.12.0",
       "properties": [
         {
           "name": "cdx:npm:package:development",
@@ -38500,13 +38533,13 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@unrs/resolver-binding-wasm32-wasi/-/resolver-binding-wasm32-wasi-1.11.1.tgz"
+          "url": "https://registry.npmjs.org/@unrs/resolver-binding-wasm32-wasi/-/resolver-binding-wasm32-wasi-1.12.0.tgz"
         }
       ],
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "e6ee1191fc499be360ec85a09338b7aab14ebcbbd06273c19a399943cfaccd32bf6f7d5f4029e578d9751a012dee722c65121fe4f2e13f04f458cfaae39c7f51"
+          "content": "844eebd631886174d1fa29c46712a95144fe3f8e114bf2797f3eb1e5456f2e356c987964a5e1ce7ad46ce5e8258283ec917c1f44e6650a109606af94a12fba42"
         }
       ],
       "licenses": [
@@ -38518,45 +38551,12 @@
       ]
     },
     {
-      "bom-ref": "@napi-rs/wasm-runtime@0.2.12",
-      "type": "library",
-      "name": "@napi-rs/wasm-runtime",
-      "version": "0.2.12",
-      "scope": "optional",
-      "purl": "pkg:npm/%40napi-rs/wasm-runtime@0.2.12",
-      "properties": [
-        {
-          "name": "cdx:npm:package:development",
-          "value": "true"
-        }
-      ],
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/@napi-rs/wasm-runtime/-/wasm-runtime-0.2.12.tgz"
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-512",
-          "content": "65559471fc18e04ff23e2b50265e3cd458c5a372b6d83eaa1740ee147e98fe76e7135d46639ba0b83c593065cf43c590d35dbc317403ed39df1f22b8a16a0825"
-        }
-      ],
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ]
-    },
-    {
-      "bom-ref": "@unrs/resolver-binding-win32-arm64-msvc@1.11.1",
+      "bom-ref": "@unrs/resolver-binding-win32-arm64-msvc@1.12.0",
       "type": "library",
       "name": "@unrs/resolver-binding-win32-arm64-msvc",
-      "version": "1.11.1",
+      "version": "1.12.0",
       "scope": "optional",
-      "purl": "pkg:npm/%40unrs/resolver-binding-win32-arm64-msvc@1.11.1",
+      "purl": "pkg:npm/%40unrs/resolver-binding-win32-arm64-msvc@1.12.0",
       "properties": [
         {
           "name": "cdx:npm:package:development",
@@ -38566,13 +38566,13 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@unrs/resolver-binding-win32-arm64-msvc/-/resolver-binding-win32-arm64-msvc-1.11.1.tgz"
+          "url": "https://registry.npmjs.org/@unrs/resolver-binding-win32-arm64-msvc/-/resolver-binding-win32-arm64-msvc-1.12.0.tgz"
         }
       ],
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "9d1733e48978967d243217cbf12de12e4c48f39057b37a3c118a1ab6db0935db17e18514f3d88e9159fb834547491c45b9531d3384358c4a4821dd488629bf53"
+          "content": "ce4c32ef88318f4cfa1ba2b109a56c40940394bb3c837b1462d34962b993841d061ec2bb726085b512cba9a78552f7fe2b69561bc297bf53e942bd7c36034e5b"
         }
       ],
       "licenses": [
@@ -38584,12 +38584,12 @@
       ]
     },
     {
-      "bom-ref": "@unrs/resolver-binding-win32-ia32-msvc@1.11.1",
+      "bom-ref": "@unrs/resolver-binding-win32-ia32-msvc@1.12.0",
       "type": "library",
       "name": "@unrs/resolver-binding-win32-ia32-msvc",
-      "version": "1.11.1",
+      "version": "1.12.0",
       "scope": "optional",
-      "purl": "pkg:npm/%40unrs/resolver-binding-win32-ia32-msvc@1.11.1",
+      "purl": "pkg:npm/%40unrs/resolver-binding-win32-ia32-msvc@1.12.0",
       "properties": [
         {
           "name": "cdx:npm:package:development",
@@ -38599,13 +38599,13 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@unrs/resolver-binding-win32-ia32-msvc/-/resolver-binding-win32-ia32-msvc-1.11.1.tgz"
+          "url": "https://registry.npmjs.org/@unrs/resolver-binding-win32-ia32-msvc/-/resolver-binding-win32-ia32-msvc-1.12.0.tgz"
         }
       ],
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "0c2108eade62d4d980669ea91689e90f99bb8ba685ae9a1f729e0b0368bc208abad09ca8dbc85a98a07136b65cc8ec15399920b11a7d3b6b1758158ff0c9ef21"
+          "content": "7432ebf5a8a08b5933fac8cbf68fd34957bee577f9ce34ab5e548900b089136858fc9d8c975a8ac661596095445afa7bda14632319c71fcde8d1c3d72e426a88"
         }
       ],
       "licenses": [
@@ -38617,12 +38617,12 @@
       ]
     },
     {
-      "bom-ref": "@unrs/resolver-binding-win32-x64-msvc@1.11.1",
+      "bom-ref": "@unrs/resolver-binding-win32-x64-msvc@1.12.0",
       "type": "library",
       "name": "@unrs/resolver-binding-win32-x64-msvc",
-      "version": "1.11.1",
+      "version": "1.12.0",
       "scope": "optional",
-      "purl": "pkg:npm/%40unrs/resolver-binding-win32-x64-msvc@1.11.1",
+      "purl": "pkg:npm/%40unrs/resolver-binding-win32-x64-msvc@1.12.0",
       "properties": [
         {
           "name": "cdx:npm:package:development",
@@ -38632,13 +38632,13 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@unrs/resolver-binding-win32-x64-msvc/-/resolver-binding-win32-x64-msvc-1.11.1.tgz"
+          "url": "https://registry.npmjs.org/@unrs/resolver-binding-win32-x64-msvc/-/resolver-binding-win32-x64-msvc-1.12.0.tgz"
         }
       ],
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "96b5b6d3485975b7d1b73b5bca0c9aabfea33fa00a13ca903762af3dc27ec7bc220f4dfc62d9d8b59f3620c349ebd18989b57b6f02f7cbd1602bee70fe962dea"
+          "content": "c4b2469ce027878798c192e83d6dbb16c080235cf0817a5e3acc5451844d8db4a6122a798f807c7cf6b3b2889c4cdf9871a0044fae09cae32f6b3c5951efd6ce"
         }
       ],
       "licenses": [
@@ -88328,12 +88328,12 @@
       ]
     },
     {
-      "bom-ref": "unrs-resolver@1.11.1",
+      "bom-ref": "unrs-resolver@1.12.0",
       "type": "library",
       "name": "unrs-resolver",
-      "version": "1.11.1",
+      "version": "1.12.0",
       "scope": "optional",
-      "purl": "pkg:npm/unrs-resolver@1.11.1",
+      "purl": "pkg:npm/unrs-resolver@1.12.0",
       "properties": [
         {
           "name": "cdx:npm:package:development",
@@ -88343,13 +88343,13 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/unrs-resolver/-/unrs-resolver-1.11.1.tgz"
+          "url": "https://registry.npmjs.org/unrs-resolver/-/unrs-resolver-1.12.0.tgz"
         }
       ],
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "6d28edf698da1019cd88681cf6b5221c62afe65e3f4c6cc3998c374619e4246b4b85b9e703fe6a263ef1ddd343091c7f3c9c6eefbe0b947f2508e941e2111f2a"
+          "content": "86226337dc773bf485db21a9357eecc1f836e1b8b8b7ebaa130c35e84787f4b4f623a9a418d7fcb99bc04bd3cbd69be403f7c16a04dac5b8077d840f45f6a1b9"
         }
       ],
       "licenses": [
@@ -101857,89 +101857,87 @@
       "dependsOn": []
     },
     {
-      "ref": "@unrs/resolver-binding-android-arm-eabi@1.11.1",
+      "ref": "@unrs/resolver-binding-android-arm-eabi@1.12.0",
       "dependsOn": []
     },
     {
-      "ref": "@unrs/resolver-binding-android-arm64@1.11.1",
+      "ref": "@unrs/resolver-binding-android-arm64@1.12.0",
       "dependsOn": []
     },
     {
-      "ref": "@unrs/resolver-binding-darwin-arm64@1.11.1",
+      "ref": "@unrs/resolver-binding-darwin-arm64@1.12.0",
       "dependsOn": []
     },
     {
-      "ref": "@unrs/resolver-binding-darwin-x64@1.11.1",
+      "ref": "@unrs/resolver-binding-darwin-x64@1.12.0",
       "dependsOn": []
     },
     {
-      "ref": "@unrs/resolver-binding-freebsd-x64@1.11.1",
+      "ref": "@unrs/resolver-binding-freebsd-x64@1.12.0",
       "dependsOn": []
     },
     {
-      "ref": "@unrs/resolver-binding-linux-arm-gnueabihf@1.11.1",
+      "ref": "@unrs/resolver-binding-linux-arm-gnueabihf@1.12.0",
       "dependsOn": []
     },
     {
-      "ref": "@unrs/resolver-binding-linux-arm-musleabihf@1.11.1",
+      "ref": "@unrs/resolver-binding-linux-arm-musleabihf@1.12.0",
       "dependsOn": []
     },
     {
-      "ref": "@unrs/resolver-binding-linux-arm64-gnu@1.11.1",
+      "ref": "@unrs/resolver-binding-linux-arm64-gnu@1.12.0",
       "dependsOn": []
     },
     {
-      "ref": "@unrs/resolver-binding-linux-arm64-musl@1.11.1",
+      "ref": "@unrs/resolver-binding-linux-arm64-musl@1.12.0",
       "dependsOn": []
     },
     {
-      "ref": "@unrs/resolver-binding-linux-ppc64-gnu@1.11.1",
+      "ref": "@unrs/resolver-binding-linux-ppc64-gnu@1.12.0",
       "dependsOn": []
     },
     {
-      "ref": "@unrs/resolver-binding-linux-riscv64-gnu@1.11.1",
+      "ref": "@unrs/resolver-binding-linux-riscv64-gnu@1.12.0",
       "dependsOn": []
     },
     {
-      "ref": "@unrs/resolver-binding-linux-riscv64-musl@1.11.1",
+      "ref": "@unrs/resolver-binding-linux-riscv64-musl@1.12.0",
       "dependsOn": []
     },
     {
-      "ref": "@unrs/resolver-binding-linux-s390x-gnu@1.11.1",
+      "ref": "@unrs/resolver-binding-linux-s390x-gnu@1.12.0",
       "dependsOn": []
     },
     {
-      "ref": "@unrs/resolver-binding-linux-x64-gnu@1.11.1",
+      "ref": "@unrs/resolver-binding-linux-x64-gnu@1.12.0",
       "dependsOn": []
     },
     {
-      "ref": "@unrs/resolver-binding-linux-x64-musl@1.11.1",
+      "ref": "@unrs/resolver-binding-linux-x64-musl@1.12.0",
       "dependsOn": []
     },
     {
-      "ref": "@unrs/resolver-binding-wasm32-wasi@1.11.1",
-      "dependsOn": [
-        "@napi-rs/wasm-runtime@0.2.12"
-      ]
+      "ref": "@unrs/resolver-binding-openharmony-arm64@1.12.0",
+      "dependsOn": []
     },
     {
-      "ref": "@napi-rs/wasm-runtime@0.2.12",
+      "ref": "@unrs/resolver-binding-wasm32-wasi@1.12.0",
       "dependsOn": [
         "@emnapi/core@1.10.0",
         "@emnapi/runtime@1.10.0",
-        "@tybys/wasm-util@0.10.2"
+        "@napi-rs/wasm-runtime@1.1.4"
       ]
     },
     {
-      "ref": "@unrs/resolver-binding-win32-arm64-msvc@1.11.1",
+      "ref": "@unrs/resolver-binding-win32-arm64-msvc@1.12.0",
       "dependsOn": []
     },
     {
-      "ref": "@unrs/resolver-binding-win32-ia32-msvc@1.11.1",
+      "ref": "@unrs/resolver-binding-win32-ia32-msvc@1.12.0",
       "dependsOn": []
     },
     {
-      "ref": "@unrs/resolver-binding-win32-x64-msvc@1.11.1",
+      "ref": "@unrs/resolver-binding-win32-x64-msvc@1.12.0",
       "dependsOn": []
     },
     {
@@ -105295,7 +105293,7 @@
         "is-bun-module@2.0.0",
         "stable-hash@0.0.5",
         "tinyglobby@0.2.16",
-        "unrs-resolver@1.11.1"
+        "unrs-resolver@1.12.0"
       ]
     },
     {
@@ -113539,28 +113537,29 @@
       "dependsOn": []
     },
     {
-      "ref": "unrs-resolver@1.11.1",
+      "ref": "unrs-resolver@1.12.0",
       "dependsOn": [
         "napi-postinstall@0.3.4",
-        "@unrs/resolver-binding-android-arm-eabi@1.11.1",
-        "@unrs/resolver-binding-android-arm64@1.11.1",
-        "@unrs/resolver-binding-darwin-arm64@1.11.1",
-        "@unrs/resolver-binding-darwin-x64@1.11.1",
-        "@unrs/resolver-binding-freebsd-x64@1.11.1",
-        "@unrs/resolver-binding-linux-arm-gnueabihf@1.11.1",
-        "@unrs/resolver-binding-linux-arm-musleabihf@1.11.1",
-        "@unrs/resolver-binding-linux-arm64-gnu@1.11.1",
-        "@unrs/resolver-binding-linux-arm64-musl@1.11.1",
-        "@unrs/resolver-binding-linux-ppc64-gnu@1.11.1",
-        "@unrs/resolver-binding-linux-riscv64-gnu@1.11.1",
-        "@unrs/resolver-binding-linux-riscv64-musl@1.11.1",
-        "@unrs/resolver-binding-linux-s390x-gnu@1.11.1",
-        "@unrs/resolver-binding-linux-x64-gnu@1.11.1",
-        "@unrs/resolver-binding-linux-x64-musl@1.11.1",
-        "@unrs/resolver-binding-wasm32-wasi@1.11.1",
-        "@unrs/resolver-binding-win32-arm64-msvc@1.11.1",
-        "@unrs/resolver-binding-win32-ia32-msvc@1.11.1",
-        "@unrs/resolver-binding-win32-x64-msvc@1.11.1"
+        "@unrs/resolver-binding-android-arm-eabi@1.12.0",
+        "@unrs/resolver-binding-android-arm64@1.12.0",
+        "@unrs/resolver-binding-darwin-arm64@1.12.0",
+        "@unrs/resolver-binding-darwin-x64@1.12.0",
+        "@unrs/resolver-binding-freebsd-x64@1.12.0",
+        "@unrs/resolver-binding-linux-arm-gnueabihf@1.12.0",
+        "@unrs/resolver-binding-linux-arm-musleabihf@1.12.0",
+        "@unrs/resolver-binding-linux-arm64-gnu@1.12.0",
+        "@unrs/resolver-binding-linux-arm64-musl@1.12.0",
+        "@unrs/resolver-binding-linux-ppc64-gnu@1.12.0",
+        "@unrs/resolver-binding-linux-riscv64-gnu@1.12.0",
+        "@unrs/resolver-binding-linux-riscv64-musl@1.12.0",
+        "@unrs/resolver-binding-linux-s390x-gnu@1.12.0",
+        "@unrs/resolver-binding-linux-x64-gnu@1.12.0",
+        "@unrs/resolver-binding-linux-x64-musl@1.12.0",
+        "@unrs/resolver-binding-openharmony-arm64@1.12.0",
+        "@unrs/resolver-binding-wasm32-wasi@1.12.0",
+        "@unrs/resolver-binding-win32-arm64-msvc@1.12.0",
+        "@unrs/resolver-binding-win32-ia32-msvc@1.12.0",
+        "@unrs/resolver-binding-win32-x64-msvc@1.12.0"
       ]
     },
     {

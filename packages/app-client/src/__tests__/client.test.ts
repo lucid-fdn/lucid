@@ -160,6 +160,15 @@ describe('LucidAppClient', () => {
           })
         }
 
+        if (url.endsWith('/api/native/session/exchange')) {
+          return Response.json({
+            accessToken: 'native_access_1',
+            refreshToken: 'native_refresh_1',
+            expiresAt: '2026-05-17T11:10:00.000Z',
+            deviceId: device.id,
+          })
+        }
+
         if (url.endsWith('/api/native/push/register')) {
           return Response.json({ device, topics: ['approvals', 'runs'] })
         }
@@ -196,6 +205,12 @@ describe('LucidAppClient', () => {
       }),
     ).resolves.toMatchObject({ handoffId: 'handoff-1' })
     await expect(
+      client.exchangeSessionHandoff({
+        handoffId: 'handoff-1',
+        exchangeToken: 'native_exchange_1',
+      }),
+    ).resolves.toMatchObject({ accessToken: 'native_access_1', deviceId: device.id })
+    await expect(
       client.registerPushToken({
         deviceId: device.id,
         provider: 'expo',
@@ -221,6 +236,7 @@ describe('LucidAppClient', () => {
 
     expect(calls.map((call) => call.url)).toEqual([
       'https://app.lucid.example/api/native/session/handoff',
+      'https://app.lucid.example/api/native/session/exchange',
       'https://app.lucid.example/api/native/push/register',
       'https://app.lucid.example/api/native/voice/commands',
       'https://app.lucid.example/api/native/actions/dispatch',

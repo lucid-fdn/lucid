@@ -36,6 +36,7 @@ import {
   type NativeRunsResponse,
   type NativeSessionHandoffInput,
   type NativeSessionHandoffResponse,
+  type NativeSessionExchangeInput,
   type NativeSessionRefreshInput,
   type NativeSessionRefreshResponse,
   type NativeSessionRevokeInput,
@@ -69,6 +70,10 @@ export class LucidAppClient {
 
   createSessionHandoff(input: NativeSessionHandoffInput): Promise<NativeSessionHandoffResponse> {
     return this.http.post('/api/native/session/handoff', nativeSessionHandoffResponseSchema, input)
+  }
+
+  exchangeSessionHandoff(input: NativeSessionExchangeInput): Promise<NativeSessionRefreshResponse> {
+    return this.http.post('/api/native/session/exchange', nativeSessionRefreshResponseSchema, input)
   }
 
   refreshSession(input: NativeSessionRefreshInput): Promise<NativeSessionRefreshResponse> {
