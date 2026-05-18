@@ -1,0 +1,19 @@
+{
+  "t": "MESSAGE_CREATE",
+  "d": {
+    "id": "1234567890123456789",
+    "channel_id": "1111111111111111111",
+    "guild_id": "2222222222222222222",
+    "author": {
+      "id": "3333333333333333333",
+      "username": "bob",
+      "discriminator": "0",
+      "global_name": "Bob"
+    },
+    "content": "Hello bot!",
+    "timestamp": "2026-03-30T12:00:00.000000+00:00",
+    "type": 0,
+    "referenced_message": null,
+    "thread": null
+  }
+}

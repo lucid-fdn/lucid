@@ -1,0 +1,63 @@
+name: Public CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  public-ci:
+    name: Public Repo CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      NODE_OPTIONS: --max-old-space-size=6144
+      NEXT_PUBLIC_DEPLOYMENT_MODE: self-hosted
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Require public lockfile
+        run: test -f package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Public export boundary
+        run: npm run oss:check
+
+      - name: Secret scan
+        run: npm run oss:secrets -- --scope private
+
+      - name: License audit and SBOM
+        run: npm run oss:license -- --root . --out .oss-reports/sbom.cdx.json
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm run oss:public-test
+
+      - name: Upload SBOM
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: public-sbom-cyclonedx
+          path: .oss-reports/sbom.cdx.json
+          if-no-files-found: ignore
+          retention-days: 30

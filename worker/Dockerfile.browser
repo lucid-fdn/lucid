@@ -1,0 +1,21 @@
+# Lucid Browser QA Gateway image
+#
+# Build this on top of the normal worker image when deploying an isolated
+# browser-capable runtime. The shared worker should call this service through
+# BROWSER_QA_CONTROL_URL instead of launching Chrome in-process.
+#
+# Example:
+#   docker build -f worker/Dockerfile -t lucid-worker:latest .
+#   docker build -f worker/Dockerfile.browser --build-arg BASE_IMAGE=lucid-worker:latest -t lucid-browser-qa:latest .
+
+ARG BASE_IMAGE=lucid-worker:latest
+FROM ${BASE_IMAGE}
+
+USER root
+RUN npx playwright install --with-deps chromium
+
+ENV WORKER_MODE=browser
+ENV BROWSER_QA_PROVIDER=playwright
+ENV BROWSER_QA_HEADLESS=true
+
+USER node

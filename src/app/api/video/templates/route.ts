@@ -1,0 +1,28 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { requireServerAuth, requireOrgContext } from '@/lib/auth/server-utils'
+import { isInternalOrg } from '@/lib/auth/internal'
+
+export const dynamic = 'force-dynamic'
+
+const VIDEO_ENGINE_URL = process.env.VIDEO_ENGINE_URL || 'http://localhost:4040'
+const VIDEO_ENGINE_API_KEY = process.env.VIDEO_ENGINE_API_KEY || ''
+
+export async function GET(request: NextRequest) {
+  await requireServerAuth()
+  const orgId = await requireOrgContext()
+
+  if (!isInternalOrg(orgId)) {
+    return NextResponse.json({ error: 'Video Studio is not available.' }, { status: 403 })
+  }
+
+  const { searchParams } = new URL(request.url)
+  const category = searchParams.get('category')
+
+  const query = category ? `?category=${category}` : ''
+  const res = await fetch(`${VIDEO_ENGINE_URL}/v1/templates${query}`, {
+    headers: { Authorization: `Bearer ${VIDEO_ENGINE_API_KEY}` },
+  })
+
+  const data = await res.json()
+  return NextResponse.json(data, { status: res.status })
+}

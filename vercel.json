@@ -1,0 +1,19 @@
+{
+  "buildCommand": "NODE_OPTIONS='--max-old-space-size=4096' npm run build",
+  "outputDirectory": ".next",
+  "installCommand": "npm install --legacy-peer-deps --include=dev",
+  "crons": [
+    {
+      "path": "/api/internal/launchpad/epoch-cron?secret=${CRON_SECRET}",
+      "schedule": "0 0 * * 1"
+    },
+    {
+      "path": "/api/internal/entitlements/usage-alerts?secret=${CRON_SECRET}",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/internal/runtimes/check-offline?secret=${CRON_SECRET}",
+      "schedule": "0 0 * * *"
+    }
+  ]
+}

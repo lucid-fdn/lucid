@@ -1,0 +1,31 @@
+{
+  "name": "@lucid-fdn/web3-types",
+  "version": "1.0.0",
+  "description": "Chain-agnostic Web3 type definitions for the Lucid operator skill",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lucid-fdn/lucid-plugins.git",
+    "directory": "packages/web3-types"
+  },
+  "license": "MIT",
+  "author": "Lucid <contact@lucid.com>"
+}

@@ -1,0 +1,131 @@
+{
+  "version": 1,
+  "reviewed": [
+    {
+      "package": "@emnapi/*",
+      "license": "MIT",
+      "decision": "allow",
+      "reason": "NPM registry metadata reviewed on 2026-05-18; lockfile omits license for native support packages."
+    },
+    {
+      "package": "@giscus/react",
+      "license": "MIT",
+      "decision": "allow",
+      "reason": "Repository license reviewed on 2026-05-18; package metadata omits license."
+    },
+    {
+      "package": "@img/sharp-*",
+      "license": "Apache-2.0",
+      "decision": "allow",
+      "reason": "NPM registry metadata reviewed on 2026-05-18; sharp native optional packages inherit Apache-2.0."
+    },
+    {
+      "package": "@lydell/node-pty-*",
+      "license": "MIT",
+      "decision": "allow",
+      "reason": "NPM registry metadata reviewed on 2026-05-18; optional native node-pty binaries inherit MIT."
+    },
+    {
+      "package": "@mariozechner/clipboard-*",
+      "license": "MIT",
+      "decision": "allow",
+      "reason": "NPM registry metadata reviewed on 2026-05-18; optional clipboard binaries are permitted for private runtime packaging."
+    },
+    {
+      "package": "@metamask/*",
+      "license": "MIT",
+      "decision": "allow",
+      "reason": "Repository license reviewed on 2026-05-18; package metadata omits license for some MetaMask SDK packages."
+    },
+    {
+      "package": "@napi-rs/*",
+      "license": "MIT",
+      "decision": "allow",
+      "reason": "NPM registry metadata reviewed on 2026-05-18; native optional packages inherit the parent MIT license."
+    },
+    {
+      "package": "@node-llama-cpp/*",
+      "license": "MIT",
+      "decision": "allow",
+      "reason": "NPM registry metadata reviewed on 2026-05-18; platform binary packages inherit node-llama-cpp MIT licensing."
+    },
+    {
+      "package": "@parcel/watcher-*",
+      "license": "MIT",
+      "decision": "allow",
+      "reason": "NPM registry metadata reviewed on 2026-05-18; platform watcher binaries inherit MIT."
+    },
+    {
+      "package": "@reflink/reflink-*",
+      "license": "MIT",
+      "decision": "allow",
+      "reason": "NPM registry metadata reviewed on 2026-05-18; platform reflink binaries inherit MIT."
+    },
+    {
+      "package": "@sentry/cli-*",
+      "license": "FSL-1.1-MIT",
+      "decision": "allow-with-commercial-terms",
+      "reason": "NPM registry metadata reviewed on 2026-05-18 for Sentry CLI native binaries. Sentry CLI is build/diagnostics tooling; deployments must comply with Functional Source License terms."
+    },
+    {
+      "package": "@splinetool/runtime",
+      "license": "LicenseRef-Spline-Runtime-Metadata-Missing",
+      "decision": "allow-with-review",
+      "reason": "Transitive dependency through @lobehub/ui. NPM package metadata and packaged tarball omit a SPDX license; retain as a reviewed transitive UI dependency and re-review before direct/runtime use."
+    },
+    {
+      "package": "@tailwindcss/oxide-*",
+      "license": "MIT",
+      "decision": "allow",
+      "reason": "NPM registry metadata reviewed on 2026-05-18; Tailwind oxide native optional packages inherit MIT."
+    },
+    {
+      "package": "@unrs/resolver-binding-*",
+      "license": "MIT",
+      "decision": "allow",
+      "reason": "NPM registry metadata reviewed on 2026-05-18; unrs resolver native optional packages inherit MIT."
+    },
+    {
+      "package": "lightningcss-*",
+      "license": "MPL-2.0",
+      "decision": "allow",
+      "reason": "NPM registry metadata reviewed on 2026-05-18; lightningcss native optional packages inherit MPL-2.0."
+    },
+    {
+      "package": "raijin-labs-lucid-ai",
+      "license": "MIT",
+      "decision": "allow",
+      "reason": "Packaged README reviewed on 2026-05-18; generated SDK declares MIT in its license badge while package metadata omits the SPDX field."
+    },
+    {
+      "package": "sqlite-vec-*",
+      "license": "MIT OR Apache-2.0",
+      "decision": "allow",
+      "reason": "NPM registry metadata reviewed on 2026-05-18; sqlite-vec native packages inherit MIT OR Apache licensing."
+    },
+    {
+      "package": "text-encoding-utf-8",
+      "license": "Unlicense",
+      "decision": "allow",
+      "reason": "Packaged LICENSE.md reviewed on 2026-05-18; package is public-domain/Unlicense text even though package metadata omits the SPDX field."
+    },
+    {
+      "package": "@lucid/*",
+      "license": "AGPL-3.0-only",
+      "decision": "allow",
+      "reason": "Local Lucid workspace packages inherit the private repo root AGPL-3.0 license for the public export boundary unless a package-level license is added later."
+    },
+    {
+      "package": "@reown/*",
+      "license": "LicenseRef-Reown-Community",
+      "decision": "allow-with-commercial-terms",
+      "reason": "Transitive Privy/WalletConnect SDK dependency. The source is not vendored, but deployments must comply with Reown community license network, notice, MAU, and RPC terms."
+    },
+    {
+      "package": "@walletconnect/*",
+      "license": "LicenseRef-Reown-Community",
+      "decision": "allow-with-commercial-terms",
+      "reason": "Transitive Privy/WalletConnect SDK dependency. The source is not vendored, but deployments must comply with Reown community license network, notice, MAU, and RPC terms."
+    }
+  ]
+}

@@ -1,0 +1,115 @@
+# Lucid Self-Hosted — Full stack (optional extras)
+# Usage: docker compose -f docker-compose.yml -f docker-compose.full.yml up
+#
+# Adds: Kong (API gateway), Studio (DB admin), Realtime (live subscriptions)
+# Debug ports: exposes db, postgrest, gotrue, redis, worker for local development
+
+services:
+  # ─── Kong (Unified API Gateway) ──────────────────────────
+  kong:
+    image: kong:3.8
+    restart: unless-stopped
+    depends_on:
+      postgrest:
+        condition: service_healthy
+      gotrue:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+      - "8443:8443"
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /etc/kong/kong.yml
+      KONG_DNS_ORDER: LAST,A,SRV,CNAME
+      KONG_PLUGINS: request-transformer,cors,key-auth,acl
+    volumes:
+      - ./docker/kong/kong.yml:/etc/kong/kong.yml:ro
+    networks:
+      - lucid
+
+  # ─── Studio (Supabase DB Admin UI) ───────────────────────
+  studio:
+    image: supabase/studio:2024.12.18-sha-dabe19e
+    restart: unless-stopped
+    depends_on:
+      postgrest:
+        condition: service_healthy
+    ports:
+      - "3100:3000"
+    environment:
+      STUDIO_PG_META_URL: http://meta:8080
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      DEFAULT_ORGANIZATION_NAME: Lucid
+      DEFAULT_PROJECT_NAME: Lucid Self-Hosted
+      SUPABASE_URL: http://postgrest:3000
+      SUPABASE_REST_URL: http://postgrest:3000
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+    networks:
+      - lucid
+
+  # ─── PG Meta (required by Studio) ────────────────────────
+  meta:
+    image: supabase/postgres-meta:v0.83.2
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PG_META_PORT: 8080
+      PG_META_DB_HOST: db
+      PG_META_DB_PORT: 5432
+      PG_META_DB_NAME: lucid
+      PG_META_DB_USER: postgres
+      PG_META_DB_PASSWORD: ${POSTGRES_PASSWORD}
+    networks:
+      - lucid
+
+  # ─── Realtime (Live subscriptions) ───────────────────────
+  realtime:
+    image: supabase/realtime:v2.28.32
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "4000:4000"
+    environment:
+      PORT: 4000
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: lucid
+      DB_SSL: "false"
+      DB_AFTER_CONNECT_QUERY: "SET search_path TO _realtime"
+      API_JWT_SECRET: ${JWT_SECRET}
+      FLY_ALLOC_ID: fly123
+      FLY_APP_NAME: lucid-realtime
+      SECRET_KEY_BASE: ${JWT_SECRET}
+      ERL_AFLAGS: "-proto_dist inet_tcp"
+      DNS_NODES: "''"
+      RLIMIT_NOFILE: 10000
+    networks:
+      - lucid
+
+  # ─── Debug port overrides (development only) ─────────────
+  db:
+    ports:
+      - "5432:5432"
+  postgrest:
+    ports:
+      - "3001:3000"
+  gotrue:
+    ports:
+      - "9999:9999"
+  redis:
+    ports:
+      - "6379:6379"
+  worker:
+    ports:
+      - "8080:8080"
+
+networks:
+  lucid:
+    external: true

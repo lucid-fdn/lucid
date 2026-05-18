@@ -1,0 +1,25 @@
+{
+  "slack": {
+    "connectionId": "replace-with-live-slack-connection-id",
+    "providerConfigKey": "slack",
+    "smokeAction": "list-channels",
+    "smokeArgs": {},
+    "expectKeys": ["channels"]
+  },
+  "notion": {
+    "connectionId": "replace-with-live-notion-connection-id",
+    "providerConfigKey": "notion",
+    "smokeAction": "search-pages",
+    "smokeArgs": {
+      "page_size": 5
+    },
+    "expectKeys": ["results"]
+  },
+  "github": {
+    "connectionId": "replace-with-live-github-connection-id",
+    "providerConfigKey": "github",
+    "smokeAction": "list-repos",
+    "smokeArgs": {},
+    "expectKeys": ["repositories"]
+  }
+}

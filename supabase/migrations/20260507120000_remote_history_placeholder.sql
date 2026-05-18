@@ -1,0 +1,5 @@
+-- Remote history placeholder.
+--
+-- This version is already present in the linked Supabase project migration
+-- history. The SQL was applied remotely outside this checkout, so this file
+-- keeps local migration ordering compatible without replaying unknown DDL.

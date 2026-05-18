@@ -1,0 +1,20 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": "..",
+    "paths": {
+      "@lucid/openclaw-runtime": ["../packages/openclaw-runtime/dist/index.d.ts"],
+      "@lucid/hermes-runtime": ["../packages/hermes-runtime/dist/index.d.ts"],
+      "@lucid/agent-bridge": ["../packages/agent-bridge/dist/index.d.ts"],
+      "@lucid/plugin-policy": ["../packages/plugin-policy/dist/index.d.ts"],
+      "@lucid/plugin-executor": ["../packages/plugin-executor/dist/index.d.ts"],
+      "@lucid/integration-auth": ["../packages/integration-auth/dist/index.d.ts"],
+      "@lucid-fdn/agent-tools-core": ["../packages/agent-tools-core/src/index.ts"],
+      "@lucid-fdn/content": ["../packages/content/src/index.ts"],
+      "@lucid-fdn/code-interpreter": ["../packages/code-interpreter/src/index.ts"],
+      "@lucid-fdn/web3-operator": ["../packages/web3-operator/src/index.ts"],
+      "@lucid-fdn/web3-types": ["../packages/web3-types/src/index.ts"]
+    }
+  }
+}

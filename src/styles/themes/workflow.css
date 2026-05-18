@@ -1,0 +1,218 @@
+/**
+ * Workflow Theme - Design System
+ * Industry-standard CSS variables for easy theming
+ * Change theme by modifying CSS variables, not Tailwind classes
+ */
+
+:root {
+  /* ============================================
+   * WORKFLOW STATUS COLORS
+   * ============================================ */
+  
+  /* Waiting Status */
+  --workflow-status-waiting: 156 163 175; /* gray-400 */
+  --workflow-status-waiting-bg: 243 244 246; /* gray-100 */
+  --workflow-status-waiting-border: 209 213 219; /* gray-300 */
+  
+  /* Running Status */
+  --workflow-status-running: 59 130 246; /* blue-500 */
+  --workflow-status-running-bg: 239 246 255; /* blue-50 */
+  --workflow-status-running-border: 59 130 246; /* blue-500 */
+  
+  /* Success Status */
+  --workflow-status-success: 34 197 94; /* green-500 */
+  --workflow-status-success-bg: 240 253 244; /* green-50 */
+  --workflow-status-success-border: 34 197 94; /* green-500 */
+  
+  /* Error Status */
+  --workflow-status-error: 239 68 68; /* red-500 */
+  --workflow-status-error-bg: 254 242 242; /* red-50 */
+  --workflow-status-error-border: 239 68 68; /* red-500 */
+  
+  /* Skipped Status */
+  --workflow-status-skipped: 209 213 219; /* gray-300 */
+  --workflow-status-skipped-bg: 249 250 251; /* gray-50 */
+  --workflow-status-skipped-border: 229 231 235; /* gray-200 */
+  
+  /* ============================================
+   * NODE TYPE COLORS
+   * ============================================ */
+  
+  /* Trigger Nodes */
+  --workflow-node-trigger: 16 185 129; /* green-500 */
+  --workflow-node-trigger-rgb: 16, 185, 129;
+  --workflow-node-trigger-hex: #10b981;
+  
+  /* Action Nodes */
+  --workflow-node-action: 59 130 246; /* blue-500 */
+  --workflow-node-action-rgb: 59, 130, 246;
+  --workflow-node-action-hex: #3b82f6;
+  
+  /* Condition Nodes */
+  --workflow-node-condition: 245 158 11; /* amber-500 */
+  --workflow-node-condition-rgb: 245, 158, 11;
+  --workflow-node-condition-hex: #f59e0b;
+  
+  /* Transform Nodes */
+  --workflow-node-transform: 139 92 246; /* purple-500 */
+  --workflow-node-transform-rgb: 139, 92, 246;
+  --workflow-node-transform-hex: #8b5cf6;
+  
+  /* ============================================
+   * PIN DATA COLORS
+   * ============================================ */
+  
+  --workflow-pin-indicator: 37 99 235; /* blue-600 */
+  --workflow-pin-button-active: 37 99 235; /* blue-600 */
+  --workflow-pin-button-active-hover: 29 78 216; /* blue-700 */
+  
+  /* ============================================
+   * UI SPACING & SIZING
+   * ============================================ */
+  
+  --workflow-sidebar-palette: 16rem; /* w-64 = 256px */
+  --workflow-sidebar-config: 24rem; /* w-96 = 384px */
+  --workflow-history-width: 34rem; /* 544px */
+  
+  /* ============================================
+   * ANIMATION TIMINGS
+   * ============================================ */
+  
+  --workflow-autosave-delay: 3000; /* 3 seconds */
+  --workflow-node-execution-delay: 500; /* 0.5 seconds */
+  --workflow-animation-duration: 200ms;
+  --workflow-transition-duration: 300ms;
+  
+  /* ============================================
+   * LIMITS
+   * ============================================ */
+  
+  --workflow-max-history-items: 20;
+  --workflow-max-history-display: 10;
+}
+
+/* ============================================
+ * DARK MODE OVERRIDES
+ * ============================================ */
+
+.dark {
+  /* Status colors in dark mode */
+  --workflow-status-waiting: 161 161 170; /* zinc-400 */
+  --workflow-status-waiting-bg: 31 41 55; /* gray-800 */
+  --workflow-status-waiting-border: 63 63 70; /* zinc-700 */
+  --workflow-status-running-bg: 30 58 138; /* blue-950 */
+  --workflow-status-success-bg: 20 83 45; /* green-950 */
+  --workflow-status-error-bg: 127 29 29; /* red-950 */
+  --workflow-status-skipped: 113 113 122; /* zinc-500 */
+  --workflow-status-skipped-bg: 17 24 39; /* gray-900 */
+  --workflow-status-skipped-border: 63 63 70; /* zinc-700 */
+}
+
+/* ============================================
+ * UTILITY CLASSES (Generated from variables)
+ * ============================================ */
+
+/* Status background colors */
+.workflow-status-waiting-bg {
+  background-color: rgb(var(--workflow-status-waiting-bg));
+}
+
+.workflow-status-running-bg {
+  background-color: rgb(var(--workflow-status-running-bg));
+}
+
+.workflow-status-success-bg {
+  background-color: rgb(var(--workflow-status-success-bg));
+}
+
+.workflow-status-error-bg {
+  background-color: rgb(var(--workflow-status-error-bg));
+}
+
+/* Status text colors */
+.workflow-status-waiting-text {
+  color: rgb(var(--workflow-status-waiting));
+}
+
+.workflow-status-running-text {
+  color: rgb(var(--workflow-status-running));
+}
+
+.workflow-status-success-text {
+  color: rgb(var(--workflow-status-success));
+}
+
+.workflow-status-error-text {
+  color: rgb(var(--workflow-status-error));
+}
+
+/* Node border colors */
+.workflow-node-trigger-border {
+  border-left-color: var(--workflow-node-trigger-hex);
+  border-left-width: 4px;
+}
+
+.workflow-node-action-border {
+  border-left-color: var(--workflow-node-action-hex);
+  border-left-width: 4px;
+}
+
+.workflow-node-condition-border {
+  border-left-color: var(--workflow-node-condition-hex);
+  border-left-width: 4px;
+}
+
+.workflow-node-transform-border {
+  border-left-color: var(--workflow-node-transform-hex);
+  border-left-width: 4px;
+}
+
+/* ============================================
+ * REACT FLOW CONTROLS - DARK MODE
+ * ============================================ */
+
+.react-flow {
+  background-color: var(--background) !important;
+}
+
+:root {
+  --rf-grid-color: rgba(0, 0, 0, 0.08);
+}
+
+.dark {
+  --rf-grid-color: rgba(255, 255, 255, 0.06);
+}
+
+.react-flow__controls button {
+  background-color: var(--background) !important;
+  border-color: var(--border) !important;
+  color: var(--foreground) !important;
+}
+
+.react-flow__controls button:hover {
+  background-color: var(--accent) !important;
+}
+
+.react-flow__controls button svg {
+  fill: var(--foreground) !important;
+}
+
+/* ============================================
+ * EXAMPLE: How to change theme
+ * ============================================
+ * 
+ * To change colors app-wide, modify the CSS variables above.
+ * 
+ * Example 1: Change success color from green to emerald
+ * --workflow-status-success: 16 185 129;  // Change to emerald
+ * 
+ * Example 2: Change node colors
+ * --workflow-node-trigger-hex: #00ff00;  // Bright green
+ * 
+ * Example 3: Change spacing
+ * --workflow-sidebar-palette: 20rem;  // Wider palette
+ * 
+ * Example 4: Change timings
+ * --workflow-autosave-delay: 5000;  // 5 seconds
+ * 
+ * ============================================ */

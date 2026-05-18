@@ -1,0 +1,26 @@
+{
+  "name": "@lucid/plugin-executor",
+  "version": "0.1.0",
+  "private": true,
+  "description": "In-process plugin executor: embedded MCP, MCPGate HTTP gateway, REST API caller",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "prebuild": "cd ../plugin-policy && npm run build",
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "typecheck": "cd ../plugin-policy && npm run build && cd ../plugin-executor && tsc --noEmit"
+  },
+  "devDependencies": {
+    "@lucid/plugin-policy": "file:../plugin-policy",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.3"
+  }
+}

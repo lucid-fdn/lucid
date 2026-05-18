@@ -1,0 +1,20 @@
+{
+  "name": "@lucid/contracts",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Shared TypeScript contracts for AI Assistants (no framework dependencies)",
+  "main": "index.ts",
+  "types": "index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

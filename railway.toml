@@ -1,0 +1,11 @@
+# Railway service config is intentionally handled per service.
+#
+# Production services:
+# - Lucid: Next.js control plane, configured from Railway service settings.
+# - lucid-browser: isolated Browser Operator gateway.
+# - lucid-channels: channel gateway worker.
+# - lucid-automation: automation/worker runtime.
+#
+# Keep this root file free of build/deploy overrides. A root-level build config
+# applies to every GitHub-connected service in this monorepo and can accidentally
+# turn the web control plane into a worker image.

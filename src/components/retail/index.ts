@@ -1,0 +1,12 @@
+// Retail funnel components. See docs/plans/2026-04-07-consumer-retail-funnel.md.
+export { RetailHero } from './landing/hero'
+export { RetailTemplateGallery } from './landing/template-gallery'
+export { RetailTemplateCard } from './landing/template-card'
+export { RetailPricingStrip } from './landing/pricing-strip'
+export { StartWizard } from './wizard/start-wizard'
+export { ActivationTutorial } from './created/activation-tutorial'
+export { RetailChatShell } from './chat/retail-chat-shell'
+export { RetailFleetList } from './fleet/retail-fleet-list'
+export { PrivateRuntimeUpsell } from './fleet/private-runtime-upsell'
+export { PersonalityEditor } from './personality/personality-editor'
+export { KnowledgeEditor } from './knowledge/knowledge-editor'

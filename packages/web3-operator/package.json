@@ -1,0 +1,60 @@
+{
+  "name": "@lucid-fdn/web3-operator",
+  "version": "1.3.1",
+  "description": "Simulation-first Web3 operator tools — Read, Reason, Act",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./config": {
+      "types": "./dist/config.d.ts",
+      "import": "./dist/config.js"
+    },
+    "./read": {
+      "types": "./dist/read/index.d.ts",
+      "import": "./dist/read/index.js"
+    },
+    "./reason": {
+      "types": "./dist/reason/index.d.ts",
+      "import": "./dist/reason/index.js"
+    },
+    "./action": {
+      "types": "./dist/action/index.d.ts",
+      "import": "./dist/action/index.js"
+    },
+    "./shared": {
+      "types": "./dist/shared/providers.d.ts",
+      "import": "./dist/shared/providers.js"
+    },
+    "./schemas": {
+      "types": "./dist/schemas.d.ts",
+      "import": "./dist/schemas.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@lucid-fdn/agent-tools-core": "file:../agent-tools-core",
+    "@lucid-fdn/web3-types": "file:../web3-types"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.5.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lucid-fdn/lucid-plugins.git",
+    "directory": "packages/web3-operator"
+  },
+  "license": "MIT",
+  "author": "Lucid <contact@lucid.com>"
+}

@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022"],
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "baseUrl": ".",
+    "paths": {
+      "@lucid/agent-routing": ["../packages/agent-routing/dist/index.d.ts"],
+      "@lucid/openclaw-runtime": ["../packages/openclaw-runtime/dist/index.d.ts"],
+      "@lucid/hermes-runtime": ["../packages/hermes-runtime/dist/index.d.ts"],
+      "@lucid/agent-bridge": ["../packages/agent-bridge/dist/index.d.ts"],
+      "@lucid/plugin-policy": ["../packages/plugin-policy/dist/index.d.ts"],
+      "@lucid/plugin-executor": ["../packages/plugin-executor/dist/index.d.ts"],
+      "@lucid/integration-auth": ["../packages/integration-auth/dist/index.d.ts"],
+      "@lucid-fdn/agent-tools-core": ["../packages/agent-tools-core/dist/index.d.ts"],
+      "@lucid-fdn/content": ["../packages/content/dist/index.d.ts"],
+      "@lucid-fdn/code-interpreter": ["../packages/code-interpreter/dist/index.d.ts"],
+      "@lucid-fdn/web3-operator": ["../packages/web3-operator/dist/index.d.ts"],
+      "@lucid-fdn/web3-types": ["../packages/web3-types/dist/index.d.ts"]
+    },
+    "types": ["node"]
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "src/**/__tests__/**", "src/**/*.test.ts", "src/**/*.spec.ts"]
+}

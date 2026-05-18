@@ -1,0 +1,203 @@
+{
+  "noRlsTables": {
+    "migrations/003_add_missing_org_columns.sql": {
+      "tables": ["organization_members"],
+      "rationale": "Legacy backfill migration for membership schema bootstrap. Current access is enforced through the application membership helpers and later RLS/policy migrations, so this historical file is recorded as reviewed rather than rewritten."
+    },
+    "migrations/013_email_system.sql": {
+      "tables": ["emails", "email_suppressions"],
+      "rationale": "Operational email tables are service-owned delivery/suppression records. User access should flow through application endpoints, not direct table access."
+    },
+    "migrations/047_whatsapp_channel_routing.sql": {
+      "tables": ["assistant_chat_locks"],
+      "rationale": "Internal lock table used by channel processors for concurrency control. It is service-role only and not intended for browser/client reads."
+    },
+    "migrations/047_whatsapp_channel_routing_FIXED.sql": {
+      "tables": ["assistant_chat_locks"],
+      "rationale": "Historical fixed variant of the same internal chat-lock migration. The table is service-role only."
+    },
+    "migrations/047_whatsapp_channel_routing_PRODUCTION.sql": {
+      "tables": ["assistant_chat_locks"],
+      "rationale": "Historical production variant of the internal chat-lock migration. The table is service-role only."
+    },
+    "migrations/047_whatsapp_channel_routing_PRODUCTION_v4.sql": {
+      "tables": ["assistant_chat_locks"],
+      "rationale": "Historical production variant of the internal chat-lock migration. The table is service-role only."
+    },
+    "migrations/047_whatsapp_channel_routing_PRODUCTION_v5.sql": {
+      "tables": ["assistant_chat_locks"],
+      "rationale": "Historical production variant of the internal chat-lock migration. The table is service-role only."
+    },
+    "migrations/047_whatsapp_channel_routing_PRODUCTION_v6.sql": {
+      "tables": ["assistant_chat_locks"],
+      "rationale": "Historical production variant of the internal chat-lock migration. The table is service-role only."
+    },
+    "migrations/056_inbound_dedup.sql": {
+      "tables": ["assistant_inbound_dedup"],
+      "rationale": "Internal idempotency table for inbound channel processing. Only trusted workers should write/read this table."
+    },
+    "migrations/057_tenant_rate_buckets.sql": {
+      "tables": ["tenant_rate_buckets"],
+      "rationale": "Internal rate-limit accounting table. Exposed tenant views should be derived through service endpoints."
+    },
+    "migrations/059_tenant_encryption_keys.sql": {
+      "tables": ["tenant_encryption_keys"],
+      "rationale": "Sensitive encryption metadata table. Direct client access must remain blocked; only server-side key services should read it."
+    },
+    "migrations/061_conversation_summaries.sql": {
+      "tables": ["assistant_conversation_summaries"],
+      "rationale": "Worker-maintained summary cache. Product reads are mediated by assistant/conversation APIs."
+    },
+    "migrations/062_phase1a_dedup_v2_and_billing_unique.sql": {
+      "tables": ["assistant_usage_records"],
+      "rationale": "Usage accounting/idempotency table. It is service-owned and should not be directly exposed to clients."
+    },
+    "migrations/084_agent_trades.sql": {
+      "tables": ["agent_trades"],
+      "rationale": "Historical trading event table. Runtime/API guards enforce access; direct client table access is not part of the product contract."
+    },
+    "migrations/107_agent_commerce_foundation.sql": {
+      "tables": [
+        "agent_commerce_connections",
+        "agent_commerce_policies",
+        "agent_spend_requests",
+        "agent_commerce_credentials",
+        "seller_payment_grants",
+        "machine_payment_challenges",
+        "machine_payment_proof_claims",
+        "agent_commerce_events",
+        "agent_commerce_idempotency_keys",
+        "agent_commerce_provider_health"
+      ],
+      "rationale": "Agent Commerce foundation tables hold credentials, policy, proofs, idempotency, and provider health. These are intentionally service-mediated until explicit RLS policies are added for user-visible slices."
+    },
+    "migrations/supabase_marketplace_schema_SAFE.sql": {
+      "tables": ["public.assets", "public.categories", "public.asset_categories", "public.runs"],
+      "rationale": "Archived marketplace bootstrap schema kept for historical compatibility. Active product access now flows through current marketplace/template APIs."
+    },
+    "migrations/supabase_marketplace_schema_ULTRA_SAFE.sql": {
+      "tables": ["public.assets", "public.categories", "public.asset_categories", "public.runs", "public.ratings", "public.bookmarks", "public.follows_orgs"],
+      "rationale": "Archived marketplace bootstrap schema kept for historical compatibility. Active product access now flows through current marketplace/template APIs."
+    },
+    "supabase/migrations/20260309000000_agent_trades.sql": {
+      "tables": ["agent_trades"],
+      "rationale": "Trading event table used by server-side trading systems. Client access should be exposed through guarded trading APIs."
+    },
+    "supabase/migrations/20260320160000_oauth_connections.sql": {
+      "tables": ["user_oauth_connections"],
+      "rationale": "OAuth connection records contain sensitive integration metadata. Direct client table access should stay blocked and service-mediated."
+    },
+    "supabase/migrations/20260320170000_assistant_oauth_bindings.sql": {
+      "tables": ["assistant_oauth_bindings"],
+      "rationale": "Assistant OAuth binding records are managed by integration services and should not be directly exposed to clients."
+    },
+    "supabase/migrations/20260322200000_fix_claim_inbound_overload.sql": {
+      "tables": ["assistant_chat_locks"],
+      "rationale": "Internal lock table used by channel processors for concurrency control. It is service-role only."
+    },
+    "supabase/migrations/20260322200001_fix_claim_inbound_overload_v2.sql": {
+      "tables": ["assistant_chat_locks"],
+      "rationale": "Internal lock table used by channel processors for concurrency control. It is service-role only."
+    },
+    "supabase/migrations/20260410190000_skill_catalog_mirror_model.sql": {
+      "tables": ["skill_install_artifacts"],
+      "rationale": "Install artifact ledger for template/skill materialization. Product visibility is through install/reconcile APIs."
+    },
+    "supabase/migrations/20260410193000_internal_job_locks.sql": {
+      "tables": ["internal_job_locks"],
+      "rationale": "Internal distributed lock table. It is only for trusted worker/control-plane coordination."
+    },
+    "supabase/migrations/20260412160000_runtime_maintenance_jobs.sql": {
+      "tables": ["runtime_maintenance_jobs"],
+      "rationale": "Operational maintenance queue. User-visible state should be projected through Mission Control/API endpoints, not direct table reads."
+    },
+    "supabase/migrations/20260427110000_channel_routing_aliases_and_surface_defaults.sql": {
+      "tables": ["assistant_channel_aliases", "channel_surface_defaults"],
+      "rationale": "Routing control-plane data is currently managed by trusted channel APIs. Add table RLS before exposing direct user mutation surfaces."
+    },
+    "supabase/migrations/20260427150000_imessage_hosted_provider_plane.sql": {
+      "tables": ["channel_provider_nodes", "channel_provider_surfaces", "channel_provider_dispatches"],
+      "rationale": "Hosted provider-plane operational tables for channel infrastructure. They are service-managed and not intended for direct client access."
+    }
+  },
+  "destructiveSql": {
+    "migrations/012_workflows_system.sql": {
+      "statements": ["DELETE FROM workflow_executions"],
+      "rationale": "Legacy workflow cleanup migration; deletion targets orphaned execution rows after workflow deletion."
+    },
+    "migrations/034_cleanup_orphaned_org_members.sql": {
+      "statements": ["DELETE FROM organization_members om"],
+      "rationale": "Backfill cleanup removes orphaned membership rows whose organizations no longer exist."
+    },
+    "migrations/071_trading_p0_completion.sql": {
+      "statements": [
+        "DELETE FROM request_dedup WHERE created_at < NOW() - INTERVAL '5 minutes'",
+        "DELETE FROM price_cache WHERE expires_at < NOW()"
+      ],
+      "rationale": "Time-bounded cache/idempotency cleanup; rows are expired operational data."
+    },
+    "supabase/migrations/20260313100000_usage_idempotency.sql": {
+      "statements": ["DELETE FROM usage_idempotency_keys"],
+      "rationale": "TTL cleanup for old idempotency keys; migration scope is bounded by age predicate in the source file."
+    },
+    "supabase/migrations/20260324200001_rag_system_scope_repair.sql": {
+      "statements": ["DELETE FROM supabase_migrations.schema_migrations WHERE version = '20260324200000'"],
+      "rationale": "Migration bookkeeping repair for a superseded RAG scope migration version."
+    },
+    "supabase/migrations/20260325800000_remove_hubspot_github_integrations.sql": {
+      "statements": ["DELETE FROM plugin_catalog WHERE slug IN ('nango-hubspot', 'nango-github')"],
+      "rationale": "Catalog cleanup removes deprecated integration entries after replacement."
+    },
+    "supabase/migrations/20260326900000_polymarket_unified_brand.sql": {
+      "statements": [
+        "DELETE FROM assistant_plugin_activations",
+        "DELETE FROM org_plugin_installations",
+        "DELETE FROM plugin_catalog WHERE slug = 'lucid-predictions'",
+        "DELETE FROM assistant_skill_activations",
+        "DELETE FROM org_skill_installations",
+        "DELETE FROM skill_catalog WHERE slug IN ('lucid-prediction-trading', 'lucid-prediction-hedge')"
+      ],
+      "rationale": "Catalog/activation cleanup for the Polymarket-to-Lucid Predictions brand consolidation."
+    },
+    "supabase/migrations/20260326920000_remove_polymarket_playbook.sql": {
+      "statements": [
+        "DELETE FROM assistant_skill_activations",
+        "DELETE FROM org_skill_installations",
+        "DELETE FROM skill_catalog WHERE slug = 'polymarket'"
+      ],
+      "rationale": "Catalog cleanup removes a deprecated Polymarket playbook after replacement."
+    },
+    "supabase/migrations/20260326950000_remove_polymarket_plugin_duplicate.sql": {
+      "statements": [
+        "DELETE FROM assistant_plugin_activations",
+        "DELETE FROM org_plugin_installations",
+        "DELETE FROM plugin_catalog WHERE slug = 'polymarket'"
+      ],
+      "rationale": "Catalog cleanup removes a duplicate Polymarket plugin entry after migration to unified branding."
+    },
+    "supabase/migrations/20260326980000_remove_hyperliquid_skill_catalog.sql": {
+      "statements": [
+        "DELETE FROM assistant_skill_activations",
+        "DELETE FROM org_skill_installations",
+        "DELETE FROM skill_catalog WHERE slug = 'hyperliquid'"
+      ],
+      "rationale": "Catalog cleanup removes deprecated Hyperliquid skill entries after replacement."
+    },
+    "supabase/migrations/20260327000000_remove_polymarket_skill_catalog.sql": {
+      "statements": [
+        "DELETE FROM assistant_skill_activations",
+        "DELETE FROM org_skill_installations",
+        "DELETE FROM skill_catalog WHERE slug = 'polymarket'"
+      ],
+      "rationale": "Catalog cleanup removes deprecated Polymarket skill entries after replacement."
+    },
+    "supabase/migrations/20260410193000_internal_job_locks.sql": {
+      "statements": ["DELETE FROM internal_job_locks"],
+      "rationale": "Expired internal lock cleanup; source migration bounds deletion to expired locks."
+    },
+    "supabase/migrations/20260427170000_request_dedup_internal_auth.sql": {
+      "statements": ["DELETE FROM request_dedup WHERE created_at < NOW() - INTERVAL '5 minutes'"],
+      "rationale": "Time-bounded cleanup of expired request idempotency rows."
+    }
+  }
+}
