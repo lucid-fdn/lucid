@@ -10,6 +10,7 @@ import type {
   NativeRun,
   NativeRunControlInput,
   NativeRunTimelineEvent,
+  NativeSessionExchangeInput,
   NativeSessionHandoffInput,
   NativeSessionRefreshInput,
   NativeSessionRefreshResponse,
@@ -17,8 +18,16 @@ import type {
   NativeShareInput,
   NativeVoiceCommandInput,
 } from '@lucid/app-client'
+import type { AgentOpsRun, AgentOpsRunStatus } from '@/lib/agent-ops/workflow-types'
 
 import { isTransientSupabaseError, supabase } from './client'
+import {
+  getAgentOpsRunDetail,
+  getAgentOpsRunForOrg,
+  listAgentOpsRunsForOrg,
+  updateAgentOpsRunStatus,
+} from './agent-ops'
+import { resolveApproval } from './mission-control'
 import { hashNativeSecret } from './native-devices'
 
 type NativeApprovalRow = {
@@ -73,6 +82,39 @@ type NativeActionReceiptRow = {
   status: NativeActionDispatchResponse['status']
   created_at: string
 }
+
+type NativeSessionHandoffRow = {
+  id: string
+  user_id: string | null
+  provider: string
+  app_kind: NativeSessionHandoffInput['appKind']
+  platform: NativeSessionHandoffInput['platform']
+  install_id: string
+  device_name: string | null
+  return_url: string | null
+  status: 'pending' | 'completed' | 'expired'
+  expires_at: string
+  exchange_token_hash: string | null
+  exchanged_at: string | null
+}
+
+type MissionControlApprovalRow = {
+  id: string
+  org_id: string
+  agent_id: string
+  run_id: string
+  tool_name: string
+  tool_args: Record<string, unknown>
+  estimated_cost_usd: number | string | null
+  risk_level: 'low' | 'medium' | 'high' | 'critical'
+  status: 'pending' | 'approved' | 'denied' | 'expired'
+  requested_at: string
+  expires_at: string
+  ai_assistants?: { name?: string | null } | Array<{ name?: string | null }> | null
+}
+
+const MISSION_CONTROL_APPROVAL_PREFIX = 'mc:'
+const AGENT_OPS_RUN_PREFIX = 'agentops:'
 
 const NATIVE_APPROVAL_SELECT = `
   id,
@@ -195,6 +237,7 @@ export async function createNativeSessionHandoffRow(
       app_kind: input.appKind,
       platform: input.platform,
       install_id: input.installId,
+      device_name: input.deviceName ?? null,
       return_url: input.returnUrl ?? null,
       status: userId ? 'completed' : 'pending',
       expires_at: expiresAt,
@@ -208,6 +251,154 @@ export async function createNativeSessionHandoffRow(
     id: String(data.id),
     status: data.status as 'pending' | 'completed' | 'expired',
     expiresAt: String(data.expires_at),
+  }
+}
+
+export async function completeNativeSessionHandoffRow(
+  userId: string,
+  handoffId: string,
+): Promise<{ handoffId: string; redirectUrl: string; status: 'completed' | 'expired'; expiresAt: string }> {
+  const exchangeToken = nativeToken('native_exchange')
+  const now = new Date().toISOString()
+  const { data, error } = await supabase
+    .from('native_session_handoffs')
+    .update({
+      user_id: userId,
+      status: 'completed',
+      completed_at: now,
+      exchange_token_hash: hashNativeSecret(exchangeToken),
+    })
+    .eq('id', handoffId)
+    .in('status', ['pending', 'completed'])
+    .gt('expires_at', now)
+    .select('id, return_url, expires_at')
+    .maybeSingle()
+
+  if (error) throw error
+  if (!data) {
+    return {
+      handoffId,
+      status: 'expired',
+      expiresAt: now,
+      redirectUrl: `lucid://auth/native?native_handoff=${encodeURIComponent(handoffId)}&status=expired`,
+    }
+  }
+
+  const redirectUrl = new URL(
+    typeof data.return_url === 'string' && data.return_url ? data.return_url : 'lucid://auth/native',
+  )
+  redirectUrl.searchParams.set('native_handoff', String(data.id))
+  redirectUrl.searchParams.set('exchange_token', exchangeToken)
+  redirectUrl.searchParams.set('status', 'completed')
+
+  return {
+    handoffId: String(data.id),
+    status: 'completed',
+    expiresAt: String(data.expires_at),
+    redirectUrl: redirectUrl.toString(),
+  }
+}
+
+export async function exchangeNativeSessionHandoffRow(
+  input: NativeSessionExchangeInput,
+): Promise<NativeSessionRefreshResponse> {
+  const now = new Date().toISOString()
+  const { data: handoff, error: handoffError } = await supabase
+    .from('native_session_handoffs')
+    .select(`
+      id,
+      user_id,
+      provider,
+      app_kind,
+      platform,
+      install_id,
+      device_name,
+      return_url,
+      status,
+      expires_at,
+      exchange_token_hash,
+      exchanged_at
+    `)
+    .eq('id', input.handoffId)
+    .eq('exchange_token_hash', hashNativeSecret(input.exchangeToken))
+    .maybeSingle()
+
+  if (handoffError) throw handoffError
+  const row = handoff as NativeSessionHandoffRow | null
+  if (!row?.user_id || row.status !== 'completed' || row.exchanged_at) {
+    throw new Error('Native handoff is not exchangeable.')
+  }
+  if (new Date(row.expires_at).getTime() <= Date.now()) {
+    throw new Error('Native handoff has expired.')
+  }
+
+  const { error: reserveError } = await supabase
+    .from('native_session_handoffs')
+    .update({ exchanged_at: now })
+    .eq('id', row.id)
+    .is('exchanged_at', null)
+    .select('id')
+    .single()
+
+  if (reserveError) {
+    if ('code' in reserveError && reserveError.code === 'PGRST116') {
+      throw new Error('Native handoff has already been exchanged.')
+    }
+    throw reserveError
+  }
+
+  const { data: device, error: deviceError } = await supabase
+    .from('native_devices')
+    .upsert({
+      user_id: row.user_id,
+      org_id: null,
+      platform: row.platform,
+      app_kind: row.app_kind,
+      install_id: row.install_id,
+      device_name: input.deviceName ?? row.device_name ?? null,
+      app_version: input.appVersion ?? null,
+      os_version: input.osVersion ?? null,
+      metadata: { sessionProvider: row.provider, handoffId: row.id },
+      notification_settings: {},
+      last_seen_at: now,
+      revoked_at: null,
+      updated_at: now,
+    }, { onConflict: 'user_id,app_kind,install_id' })
+    .select('id')
+    .single()
+
+  if (deviceError) throw deviceError
+
+  const accessToken = nativeToken('native_access')
+  const refreshToken = nativeToken('native_refresh')
+  const expiresAt = new Date(Date.now() + 60 * 60_000).toISOString()
+  const deviceId = String(device.id)
+
+  const { error: sessionError } = await supabase
+    .from('native_auth_sessions')
+    .insert({
+      user_id: row.user_id,
+      device_id: deviceId,
+      token_hash: hashNativeSecret(accessToken),
+      refresh_token_hash: hashNativeSecret(refreshToken),
+      expires_at: expiresAt,
+      last_used_at: now,
+    })
+
+  if (sessionError) throw sessionError
+
+  const { error: consumeError } = await supabase
+    .from('native_session_handoffs')
+    .update({ exchange_device_id: deviceId })
+    .eq('id', row.id)
+
+  if (consumeError) throw consumeError
+
+  return {
+    accessToken,
+    refreshToken,
+    expiresAt,
+    deviceId,
   }
 }
 
@@ -311,6 +502,229 @@ export async function listNativeRunRows(userId: string): Promise<NativeRun[]> {
 
   if (error) throw error
   return ((data ?? []) as NativeRunRow[]).map(mapNativeRunRow)
+}
+
+export async function listMissionControlNativeApprovals(userId: string): Promise<NativeApproval[]> {
+  const orgIds = await getNativeUserOrgIds(userId)
+  if (orgIds.length === 0) return []
+
+  const { data, error } = await supabase
+    .from('mc_pending_approvals')
+    .select(`
+      id,
+      org_id,
+      agent_id,
+      run_id,
+      tool_name,
+      tool_args,
+      estimated_cost_usd,
+      risk_level,
+      status,
+      requested_at,
+      expires_at,
+      ai_assistants(name)
+    `)
+    .in('org_id', orgIds)
+    .eq('status', 'pending')
+    .order('requested_at', { ascending: false })
+    .limit(100)
+
+  if (error) throw error
+  return ((data ?? []) as MissionControlApprovalRow[]).map(mapMissionControlApproval)
+}
+
+export async function getMissionControlNativeApproval(
+  userId: string,
+  approvalId: string,
+): Promise<NativeApproval | null> {
+  const sourceId = stripSourcePrefix(approvalId, MISSION_CONTROL_APPROVAL_PREFIX)
+  const orgIds = await getNativeUserOrgIds(userId)
+  if (!sourceId || orgIds.length === 0) return null
+
+  const { data, error } = await supabase
+    .from('mc_pending_approvals')
+    .select(`
+      id,
+      org_id,
+      agent_id,
+      run_id,
+      tool_name,
+      tool_args,
+      estimated_cost_usd,
+      risk_level,
+      status,
+      requested_at,
+      expires_at,
+      ai_assistants(name)
+    `)
+    .eq('id', sourceId)
+    .in('org_id', orgIds)
+    .maybeSingle()
+
+  if (error) throw error
+  return data ? mapMissionControlApproval(data as MissionControlApprovalRow) : null
+}
+
+export async function decideMissionControlNativeApproval(
+  userId: string,
+  approvalId: string,
+  input: NativeApprovalDecisionInput,
+): Promise<NativeApproval | null> {
+  const sourceId = stripSourcePrefix(approvalId, MISSION_CONTROL_APPROVAL_PREFIX)
+  const orgIds = await getNativeUserOrgIds(userId)
+  if (!sourceId || orgIds.length === 0) return null
+
+  const { data: approval, error } = await supabase
+    .from('mc_pending_approvals')
+    .select('id, org_id')
+    .eq('id', sourceId)
+    .in('org_id', orgIds)
+    .eq('status', 'pending')
+    .maybeSingle()
+
+  if (error) throw error
+  if (!approval?.org_id) return null
+
+  const result = await resolveApproval(
+    sourceId,
+    String(approval.org_id),
+    userId,
+    {
+      approval_id: sourceId,
+      action: input.decision === 'approve' ? 'approved' : 'denied',
+      reason: input.reason,
+    },
+  )
+  if (!result.success) throw new Error(result.error ?? 'Failed to resolve Mission Control approval.')
+
+  return getMissionControlNativeApproval(userId, approvalId)
+}
+
+export async function listAgentOpsNativeRuns(userId: string): Promise<NativeRun[]> {
+  const orgIds = await getNativeUserOrgIds(userId)
+  const runGroups = await Promise.all(
+    orgIds.map((orgId) => listAgentOpsRunsForOrg(orgId, { limit: 50 })),
+  )
+
+  return runGroups
+    .flat()
+    .map(mapAgentOpsRun)
+    .sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime())
+}
+
+export async function getAgentOpsNativeRun(userId: string, runId: string): Promise<NativeRun | null> {
+  const sourceId = stripSourcePrefix(runId, AGENT_OPS_RUN_PREFIX)
+  const orgIds = await getNativeUserOrgIds(userId)
+  if (!sourceId || orgIds.length === 0) return null
+
+  for (const orgId of orgIds) {
+    const run = await getAgentOpsRunForOrg(orgId, sourceId)
+    if (run) return mapAgentOpsRun(run)
+  }
+
+  return null
+}
+
+export async function listAgentOpsNativeRunEvents(
+  userId: string,
+  runId: string,
+): Promise<NativeRunTimelineEvent[]> {
+  const sourceId = stripSourcePrefix(runId, AGENT_OPS_RUN_PREFIX)
+  const orgIds = await getNativeUserOrgIds(userId)
+  if (!sourceId || orgIds.length === 0) return []
+
+  for (const orgId of orgIds) {
+    const detail = await getAgentOpsRunDetail(orgId, sourceId)
+    if (!detail) continue
+
+    const events: NativeRunTimelineEvent[] = [
+      {
+        id: `${runId}:created`,
+        at: detail.run.createdAt,
+        title: 'Agent Ops run created',
+        body: detail.run.scope.label ?? detail.run.workflowId,
+        actor: 'Agent Ops',
+        level: 'info',
+      },
+      {
+        id: `${runId}:status`,
+        at: detail.run.updatedAt,
+        title: `Status: ${mapAgentOpsStatus(detail.run)}`,
+        body: detail.run.errorMessage ?? summarizeAgentOpsRun(detail.run),
+        actor: 'Agent Ops',
+        level: levelForAgentOpsStatus(detail.run.status),
+      },
+      ...detail.timelineEvents.map((event) => ({
+        id: `agentops-timeline:${event.id}`,
+        at: event.createdAt,
+        title: event.title,
+        body: event.body ?? undefined,
+        actor: 'Mission Control',
+        level: 'info' as const,
+      })),
+      ...detail.findings.slice(0, 8).map((finding) => ({
+        id: `agentops-finding:${finding.id}`,
+        at: finding.createdAt,
+        title: finding.title,
+        body: finding.body,
+        actor: 'Agent Ops Finding',
+        level: finding.severity === 'critical' || finding.severity === 'high' ? 'warning' as const : 'info' as const,
+      })),
+      ...detail.artifacts.slice(0, 8).map((artifact) => ({
+        id: `agentops-artifact:${artifact.id}`,
+        at: artifact.createdAt,
+        title: artifact.title,
+        body: artifact.summary ?? artifact.uri ?? undefined,
+        actor: 'Agent Ops Artifact',
+        level: 'success' as const,
+      })),
+    ]
+
+    return events.sort((left, right) => new Date(right.at).getTime() - new Date(left.at).getTime())
+  }
+
+  return []
+}
+
+export async function controlAgentOpsNativeRun(
+  userId: string,
+  runId: string,
+  input: NativeRunControlInput,
+): Promise<NativeRun | null> {
+  const sourceId = stripSourcePrefix(runId, AGENT_OPS_RUN_PREFIX)
+  const orgIds = await getNativeUserOrgIds(userId)
+  if (!sourceId || orgIds.length === 0) return null
+
+  for (const orgId of orgIds) {
+    const existing = await getAgentOpsRunForOrg(orgId, sourceId)
+    if (!existing) continue
+    if (input.action === 'open') return mapAgentOpsRun(existing)
+
+    const nextStatus = agentOpsStatusForNativeAction(input.action)
+    const metadata = {
+      ...existing.metadata,
+      nativeControl: {
+        action: input.action,
+        reason: input.reason ?? null,
+        userId,
+        at: new Date().toISOString(),
+      },
+      nativePaused: input.action === 'pause' ? true : input.action === 'resume' ? false : Boolean(existing.metadata.nativePaused),
+      nativeEscalated: input.action === 'escalate' ? true : Boolean(existing.metadata.nativeEscalated),
+    }
+
+    const updated = await updateAgentOpsRunStatus({
+      orgId,
+      runId: sourceId,
+      status: nextStatus,
+      errorMessage: input.action === 'cancel' ? input.reason ?? 'Cancelled from native app.' : existing.errorMessage,
+      metadata,
+    })
+
+    return mapAgentOpsRun(updated)
+  }
+
+  return null
 }
 
 export async function getNativeApprovalRow(userId: string, approvalId: string): Promise<NativeApproval | null> {
@@ -589,6 +1003,110 @@ async function createNativeRunEventRow(input: {
     })
 
   if (error) throw error
+}
+
+async function getNativeUserOrgIds(userId: string): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('organization_members')
+    .select('organization_id')
+    .eq('user_id', userId)
+
+  if (error) throw error
+  return Array.from(new Set((data ?? []).map((row) => String(row.organization_id)).filter(Boolean)))
+}
+
+function stripSourcePrefix(id: string, prefix: string): string | null {
+  if (id.startsWith(prefix)) return id.slice(prefix.length)
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)
+    ? id
+    : null
+}
+
+function mapMissionControlApproval(row: MissionControlApprovalRow): NativeApproval {
+  const assistant = Array.isArray(row.ai_assistants) ? row.ai_assistants[0] : row.ai_assistants
+  const cost = row.estimated_cost_usd == null ? null : Number(row.estimated_cost_usd)
+  const risk: NativeApproval['risk'] =
+    row.risk_level === 'critical' || row.risk_level === 'high' ? 'privileged' : 'confirmation-required'
+
+  return {
+    id: `${MISSION_CONTROL_APPROVAL_PREFIX}${row.id}`,
+    title: `Approve ${formatNativeLabel(row.tool_name)}`,
+    summary: [
+      `${assistant?.name ?? 'Agent'} wants to run ${formatNativeLabel(row.tool_name)}.`,
+      cost && Number.isFinite(cost) ? `Estimated cost: $${cost.toFixed(2)}.` : null,
+    ].filter(Boolean).join(' '),
+    agentName: assistant?.name ?? 'Mission Control',
+    workspaceId: row.org_id,
+    runId: row.run_id,
+    risk,
+    status: row.status,
+    expiresAt: row.expires_at,
+    createdAt: row.requested_at,
+    deepLink: `lucid://workspace/${row.org_id}/approvals/${encodeURIComponent(`${MISSION_CONTROL_APPROVAL_PREFIX}${row.id}`)}`,
+  }
+}
+
+function mapAgentOpsRun(run: AgentOpsRun): NativeRun {
+  const status = mapAgentOpsStatus(run)
+  const workflowName = typeof run.metadata.workflow_name === 'string'
+    ? run.metadata.workflow_name
+    : formatNativeLabel(run.workflowId)
+
+  return {
+    id: `${AGENT_OPS_RUN_PREFIX}${run.id}`,
+    title: run.scope.label ?? workflowName,
+    agentName: 'Agent Ops',
+    workspaceId: run.orgId,
+    projectId: run.projectId ?? undefined,
+    status,
+    progress: progressForAgentOpsRun(run),
+    needsApproval: status === 'blocked' || Boolean(run.metadata.nativeEscalated),
+    updatedAt: run.updatedAt,
+    deepLink: `lucid://workspace/${run.orgId}/runs/${encodeURIComponent(`${AGENT_OPS_RUN_PREFIX}${run.id}`)}`,
+  }
+}
+
+function mapAgentOpsStatus(run: AgentOpsRun): NativeRun['status'] {
+  if (run.status === 'blocked' && run.metadata.nativePaused) return 'paused'
+  return run.status
+}
+
+function progressForAgentOpsRun(run: AgentOpsRun): number | undefined {
+  if (typeof run.metadata.progress === 'number') return Math.min(Math.max(run.metadata.progress, 0), 100)
+  if (run.status === 'completed') return 100
+  if (run.status === 'queued') return 0
+  return undefined
+}
+
+function summarizeAgentOpsRun(run: AgentOpsRun): string {
+  const parts = [
+    run.artifactCount > 0 ? `${run.artifactCount} artifact${run.artifactCount === 1 ? '' : 's'}` : null,
+    run.findingCount > 0 ? `${run.findingCount} finding${run.findingCount === 1 ? '' : 's'}` : null,
+    run.costUsd > 0 ? `$${run.costUsd.toFixed(2)} estimated cost` : null,
+  ].filter(Boolean)
+  return parts.length > 0 ? parts.join(', ') : 'Agent Ops is tracking this run from Mission Control.'
+}
+
+function levelForAgentOpsStatus(status: AgentOpsRunStatus): NativeRunTimelineEvent['level'] {
+  if (status === 'completed') return 'success'
+  if (status === 'failed' || status === 'cancelled') return 'error'
+  if (status === 'blocked') return 'warning'
+  return 'info'
+}
+
+function agentOpsStatusForNativeAction(action: NativeRunControlInput['action']): AgentOpsRunStatus {
+  if (action === 'cancel') return 'cancelled'
+  if (action === 'resume') return 'running'
+  if (action === 'pause' || action === 'escalate') return 'blocked'
+  return 'running'
+}
+
+function formatNativeLabel(value: string): string {
+  return value
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, (character) => character.toUpperCase())
 }
 
 function nativeToken(prefix: string): string {
