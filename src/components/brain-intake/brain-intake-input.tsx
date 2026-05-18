@@ -1,13 +1,18 @@
 'use client'
 
 import { useState } from 'react'
-import { ArrowUp, FileText, Loader2, Paperclip, Sparkles, Upload } from 'lucide-react'
+import { ArrowUp, FileText, FolderOpen, Loader2, Paperclip } from 'lucide-react'
 
 import { BrainIntakeReviewSheet } from './brain-intake-review-sheet'
 import { useBrainIntakeFlow } from './use-brain-intake-flow'
 import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
 import { FileUpload, FileUploadContent, FileUploadTrigger } from '@/ui/components/file-upload'
+import {
+  PromptInput,
+  PromptInputAction,
+  PromptInputActions,
+  PromptInputTextarea,
+} from '@/ui/components/prompt-input'
 import { useToast } from '@/hooks/use-toast'
 import type { BrainIntakeFile } from '@/lib/brain-intake/schema'
 import { getCSRFTokenFromCookie } from '@/lib/auth/csrf-client'
@@ -70,88 +75,109 @@ export function BrainIntakeInput({
     >
       <section
         className={cn(
-          'rounded-[32px] border border-border/70 bg-card/70 p-4 shadow-sm backdrop-blur',
+          'mx-auto w-full max-w-5xl overflow-hidden rounded-[36px] border border-border/55 bg-[radial-gradient(circle_at_top,hsl(var(--muted)/0.34),transparent_46%),hsl(var(--card)/0.58)] p-5 shadow-sm backdrop-blur sm:p-8 lg:p-10',
           className,
         )}
       >
         <FileUploadContent>
-          <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-primary/40 bg-background/95 p-8 shadow-xl">
-            <Upload className="h-10 w-10 text-primary/60" />
-            <p className="text-base font-medium text-foreground">Drop Brain files here</p>
-            <p className="max-w-xs text-center text-sm text-muted-foreground">
-              Text, markdown, JSON, YAML, PDFs, and docs will be routed through the Brain intake flow.
-            </p>
+          <div className="flex w-[min(460px,calc(100vw-48px))] flex-col items-center gap-3 rounded-[28px] border border-border/60 bg-card p-5 shadow-2xl">
+            <div className="flex w-full flex-col items-center rounded-2xl border border-dashed border-border/80 bg-background/70 px-6 py-7">
+              <FolderOpen className="h-11 w-11 text-foreground" />
+              <p className="mt-3 text-base font-medium text-foreground">Drop files into the Brain</p>
+              <p className="mt-1 max-w-xs text-center text-sm leading-6 text-muted-foreground">
+                Lucid will classify notes, docs, links, and decisions before saving them.
+              </p>
+            </div>
           </div>
         </FileUploadContent>
 
-        <div className="mb-3 flex items-start justify-between gap-3 px-1">
-          <div>
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <h3 className="text-sm font-semibold text-foreground">Add to Brain</h3>
-            </div>
-            <p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground">
-              Paste anything. Lucid classifies it into context, facts, documents, sources, or a recall test before saving.
+        <div className="mx-auto flex max-w-4xl flex-col items-center text-center">
+          <div className="max-w-2xl space-y-2 px-1">
+            <h3 className="text-balance text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+              Drop anything into the Brain.
+            </h3>
+            <p className="text-sm leading-6 text-muted-foreground sm:text-base">
+              Lucid absorbs notes, docs, links, decisions, and questions, then turns them into memory agents can trust.
             </p>
           </div>
-        </div>
 
-        <div className="rounded-[28px] border border-border/70 bg-background/75 p-2 shadow-xs transition-colors focus-within:border-primary/35">
-          <Textarea
-            value={text}
-            onChange={(event) => setText(event.target.value)}
-            onKeyDown={(event) => {
-              if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
-                event.preventDefault()
-                void submit()
-              }
-            }}
-            placeholder="Paste a company rule, customer note, document, source URL, or question to test recall..."
-            className="min-h-[104px] resize-none border-none bg-transparent px-3 py-3 text-base shadow-none focus-visible:ring-0"
-          />
-
-          {files.length > 0 ? (
-            <div className="flex flex-wrap gap-2 px-3 pb-2">
-              {files.map((file) => (
-                <span
-                  key={`${file.name}-${file.size}`}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-muted/60 px-2.5 py-1 text-xs text-muted-foreground"
-                >
-                  <FileText className="h-3 w-3" />
-                  {file.name}
-                </span>
-              ))}
+          <div className="mt-8 flex min-h-[260px] w-full flex-col items-center justify-center rounded-[28px] border border-dashed border-border/80 bg-background/35 px-4 py-8 text-center">
+            <FolderOpen className="h-12 w-12 text-foreground" />
+            <p className="mt-4 text-sm font-medium text-foreground sm:text-base">
+              Drag files, notes, links, or decisions here.
+            </p>
+            <div className="my-4 flex items-center gap-3 text-xs uppercase tracking-[0.18em] text-muted-foreground">
+              <span className="h-px w-10 bg-border" />
+              or
+              <span className="h-px w-10 bg-border" />
             </div>
-          ) : null}
+            <FileUploadTrigger asChild>
+              <Button type="button" variant="outline" className="rounded-full bg-background/80">
+                Browse files
+              </Button>
+            </FileUploadTrigger>
+          </div>
 
-          <div className="flex items-center justify-between gap-2 px-2 pb-2 pt-1">
-            <div className="flex items-center gap-2">
-              <FileUploadTrigger asChild>
+          <PromptInput
+            value={text}
+            onValueChange={setText}
+            onSubmit={() => void submit()}
+            isLoading={flow.isClassifying}
+            maxHeight={220}
+            className="mt-5 w-full rounded-none border-0 border-t border-border/65 bg-transparent p-0 pt-4 shadow-none focus-within:border-border/65 focus-within:shadow-none"
+          >
+            <PromptInputTextarea
+              placeholder="Paste a rule, customer note, link, decision, or recall question..."
+              className="min-h-[92px] resize-none border-none bg-transparent px-0 py-1 text-center text-base text-foreground shadow-none placeholder:text-muted-foreground focus-visible:ring-0"
+            />
+
+            {files.length > 0 ? (
+              <div className="flex flex-wrap justify-center gap-2 pb-2 pt-1">
+                {files.map((file) => (
+                  <span
+                    key={`${file.name}-${file.size}`}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-muted/60 px-2.5 py-1 text-xs text-muted-foreground"
+                  >
+                    <FileText className="h-3 w-3" />
+                    {file.name}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+
+            <PromptInputActions className="flex items-center justify-between gap-2 pt-1">
+              <div className="flex items-center gap-2">
+                <PromptInputAction tooltip="Attach files">
+                  <FileUploadTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="rounded-full"
+                    >
+                      <Paperclip className="h-4 w-4" />
+                      Attach
+                    </Button>
+                  </FileUploadTrigger>
+                </PromptInputAction>
+                <p className="hidden text-xs text-muted-foreground sm:block">
+                  Enter to review.
+                </p>
+              </div>
+              <PromptInputAction tooltip="Review Brain update">
                 <Button
                   type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="rounded-full"
+                  size="icon"
+                  className="h-9 w-9 rounded-full"
+                  disabled={!hasInput || flow.isClassifying}
+                  onClick={() => void submit()}
+                  aria-label="Review Brain update"
                 >
-                  <Paperclip className="h-4 w-4" />
-                  Attach
+                  {flow.isClassifying ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUp className="h-4 w-4" />}
                 </Button>
-              </FileUploadTrigger>
-              <p className="hidden text-xs text-muted-foreground sm:block">
-                Drop files or press Cmd+Enter.
-              </p>
-            </div>
-            <Button
-              type="button"
-              size="icon"
-              className="h-9 w-9 rounded-full"
-              disabled={!hasInput || flow.isClassifying}
-              onClick={() => void submit()}
-              aria-label="Review Brain update"
-            >
-              {flow.isClassifying ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUp className="h-4 w-4" />}
-            </Button>
-          </div>
+              </PromptInputAction>
+            </PromptInputActions>
+          </PromptInput>
         </div>
 
         {flow.error ? (

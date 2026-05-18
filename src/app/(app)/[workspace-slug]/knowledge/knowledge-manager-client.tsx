@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 
-import { PageHeader, PageShell, PageTabs } from '@/components/page'
+import { PageShell } from '@/components/page'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { Tabs } from '@/components/ui/tabs'
 import { KnowledgeBrainOverview } from '@/components/knowledge/knowledge-brain-overview'
 import { KnowledgeBaseWorkspace } from '@/components/knowledge/knowledge-base-workspace'
 import { KnowledgeHealthyState, KnowledgeReviewQueue } from '@/components/knowledge/knowledge-lists'
@@ -20,18 +21,13 @@ import type {
   KnowledgeSourceItem,
 } from '@/features/knowledge-manager/types'
 
-const TABS: Array<{ id: KnowledgeManagerTab; label: string }> = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'context', label: 'Context' },
-  { id: 'knowledge', label: 'Knowledge' },
-  { id: 'health', label: 'Health' },
-]
-
 const LEGACY_TAB_TO_SECTION: Partial<Record<string, KnowledgeBaseSection>> = {
   facts: 'facts',
   documents: 'documents',
   sources: 'sources',
 }
+
+const KNOWLEDGE_MANAGER_TABS: KnowledgeManagerTab[] = ['overview', 'context', 'knowledge', 'health']
 
 export function KnowledgeManagerClient({
   data,
@@ -204,92 +200,101 @@ export function KnowledgeManagerClient({
 
   return (
     <PageShell contentClassName="gap-6 px-6 py-6">
-      <PageHeader
-        className="overflow-hidden rounded-[28px] border border-border/70 bg-[radial-gradient(circle_at_top_left,hsl(var(--primary)/0.12),transparent_36%),linear-gradient(135deg,hsl(var(--card)/0.96),hsl(var(--background)/0.9))] px-6 py-5 shadow-sm"
-        eyebrow={<span className="text-sm font-medium text-primary">Workspace Brain</span>}
-        title="What agents know, believe, obey, cite, and recall."
-        description="Manage context and knowledge from one canonical surface. Mission Control stays reserved for advanced maintenance, provenance, and evals."
-      >
-        <PageTabs
+      <h1 className="sr-only">Brain</h1>
+
+      <main className="relative mx-auto flex w-full max-w-5xl flex-col items-start justify-start [perspective:1000px]">
+        <Tabs
           value={tab}
-          onValueChange={selectTab}
-          options={TABS.map((item) => ({ value: item.id, label: item.label }))}
-          className="mt-4 w-fit max-w-full"
+          onValueChange={(nextTab) => selectTab(nextTab as KnowledgeManagerTab)}
+          containerClassName="mx-auto w-fit max-w-full justify-center rounded-2xl"
+          activeTabClassName="bg-accent"
+          tabClassName="text-sm font-medium text-muted-foreground"
+          layout="page"
+          tabs={[
+            {
+              value: 'overview',
+              title: 'Overview',
+              content: (
+                <KnowledgeBrainOverview
+                  overview={data.overview}
+                  workspaceSlug={workspaceSlug}
+                  workspaceId={data.overview.orgId}
+                  onOpenContext={() => selectTab('context')}
+                  onOpenKnowledge={() => selectTab('knowledge')}
+                  onOpenHealth={() => selectTab('health')}
+                  onRecall={openRecallTester}
+                />
+              ),
+            },
+            {
+              value: 'context',
+              title: 'Context',
+              content: (
+                <SharedOperatingContextManager
+                  title="Operating context"
+                  description="Set the durable guidance, updates, memory, and risks agents inherit before they act."
+                  workspaceId={data.overview.orgId}
+                  scopeType="workspace"
+                  scopeId={data.overview.orgId}
+                  endpoint={contextEndpoint}
+                />
+              ),
+            },
+            {
+              value: 'knowledge',
+              title: 'Knowledge',
+              content: (
+                <KnowledgeBaseWorkspace
+                  data={data}
+                  section={knowledgeSection}
+                  onSectionChange={selectKnowledgeSection}
+                  showFactEditor={showFactEditor}
+                  showDocumentUploader={showDocumentUploader}
+                  showSourceEditor={showSourceEditor}
+                  editingFact={editingFact}
+                  editingSource={editingSource}
+                  deletingDocumentId={deletingDocumentId}
+                  busyFactId={busyFactId}
+                  busySourceId={busySourceId}
+                  onShowFactEditor={openFactEditor}
+                  onShowDocumentUploader={openDocumentUploader}
+                  onShowSourceEditor={openSourceEditor}
+                  onFactSaved={(query) => {
+                    setShowFactEditor(false)
+                    setEditingFact(null)
+                    if (query) {
+                      setRecallQuery(query)
+                      setShowRecallTester(true)
+                    }
+                    router.refresh()
+                  }}
+                  onDocumentUploaded={() => {
+                    setShowDocumentUploader(false)
+                    router.refresh()
+                  }}
+                  onSourceSaved={() => {
+                    setShowSourceEditor(false)
+                    setEditingSource(null)
+                    router.refresh()
+                  }}
+                  onTestFact={(fact) => {
+                    openRecallTester(`What should agents know about ${fact.subject}?`)
+                  }}
+                  onArchiveFact={(fact) => { void mutateFact(fact, 'archive') }}
+                  onDeleteFact={(fact) => { void mutateFact(fact, 'delete') }}
+                  onDeleteDocument={(document) => { void deleteDocument(document) }}
+                  onRefreshSource={(source) => { void refreshSource(source) }}
+                  onArchiveSource={(source) => { void archiveSource(source) }}
+                />
+              ),
+            },
+            {
+              value: 'health',
+              title: 'Health',
+              content: data.reviewItems.length ? <KnowledgeReviewQueue items={data.reviewItems} /> : <KnowledgeHealthyState />,
+            },
+          ]}
         />
-      </PageHeader>
-
-      <main className="flex w-full flex-col gap-6">
-        {tab === 'overview' ? (
-          <KnowledgeBrainOverview
-            overview={data.overview}
-            workspaceSlug={workspaceSlug}
-            workspaceId={data.overview.orgId}
-            onOpenContext={() => selectTab('context')}
-            onOpenKnowledge={() => selectTab('knowledge')}
-            onOpenHealth={() => selectTab('health')}
-            onRecall={openRecallTester}
-          />
-        ) : null}
-
-        {tab === 'context' ? (
-          <SharedOperatingContextManager
-            title="Operating context"
-            description="Set the durable guidance, updates, memory, and risks agents inherit before they act."
-            workspaceId={data.overview.orgId}
-            scopeType="workspace"
-            scopeId={data.overview.orgId}
-            endpoint={contextEndpoint}
-          />
-        ) : null}
-
-        {tab === 'knowledge' ? (
-          <KnowledgeBaseWorkspace
-            data={data}
-            section={knowledgeSection}
-            onSectionChange={selectKnowledgeSection}
-            showFactEditor={showFactEditor}
-            showDocumentUploader={showDocumentUploader}
-            showSourceEditor={showSourceEditor}
-            editingFact={editingFact}
-            editingSource={editingSource}
-            deletingDocumentId={deletingDocumentId}
-            busyFactId={busyFactId}
-            busySourceId={busySourceId}
-            onShowFactEditor={openFactEditor}
-            onShowDocumentUploader={openDocumentUploader}
-            onShowSourceEditor={openSourceEditor}
-            onFactSaved={(query) => {
-              setShowFactEditor(false)
-              setEditingFact(null)
-              if (query) {
-                setRecallQuery(query)
-                setShowRecallTester(true)
-              }
-              router.refresh()
-            }}
-            onDocumentUploaded={() => {
-              setShowDocumentUploader(false)
-              router.refresh()
-            }}
-            onSourceSaved={() => {
-              setShowSourceEditor(false)
-              setEditingSource(null)
-              router.refresh()
-            }}
-            onTestFact={(fact) => {
-              openRecallTester(`What should agents know about ${fact.subject}?`)
-            }}
-            onArchiveFact={(fact) => { void mutateFact(fact, 'archive') }}
-            onDeleteFact={(fact) => { void mutateFact(fact, 'delete') }}
-            onDeleteDocument={(document) => { void deleteDocument(document) }}
-            onRefreshSource={(source) => { void refreshSource(source) }}
-            onArchiveSource={(source) => { void archiveSource(source) }}
-          />
-        ) : null}
-
-        {tab === 'health' ? (
-          data.reviewItems.length ? <KnowledgeReviewQueue items={data.reviewItems} /> : <KnowledgeHealthyState />
-        ) : null}
       </main>
 
       <Sheet open={showRecallTester} onOpenChange={setShowRecallTester}>
@@ -325,7 +330,7 @@ function parseInitialState(
       ? 'health'
     : tabValue === 'sources'
       ? 'knowledge'
-    : TABS.some((item) => item.id === tabValue) ? (tabValue as KnowledgeManagerTab) : 'overview'
+    : KNOWLEDGE_MANAGER_TABS.includes(tabValue as KnowledgeManagerTab) ? (tabValue as KnowledgeManagerTab) : 'overview'
   return { tab, section }
 }
 

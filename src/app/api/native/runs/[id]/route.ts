@@ -10,7 +10,7 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ id
   try {
     const userId = await requireUserId()
     const { id } = await context.params
-    return NextResponse.json(getNativeRunDetail(userId, id))
+    return NextResponse.json(await getNativeRunDetail(userId, id))
   } catch (error) {
     return nativeApiError(error, 'GET /api/native/runs/[id]')
   }

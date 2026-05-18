@@ -11,9 +11,8 @@ export async function POST(request: NextRequest) {
   try {
     const userId = await requireUserId()
     const input = nativeVoiceCommandInputSchema.parse(await request.json())
-    return NextResponse.json(createNativeVoiceCommand(userId, input))
+    return NextResponse.json(await createNativeVoiceCommand(userId, input))
   } catch (error) {
     return nativeApiError(error, 'POST /api/native/voice/commands')
   }
 }
-

@@ -1,5 +1,5 @@
 /**
- * Mission Control — Work (Human Work Items)
+ * Mission Control — Work Queue (Human Work Items)
  *
  * Phase 1 of docs/plans/2026-04-08-pulse-nerve-human-pm-integration.md.
  * Internal PM surface for the unified human work ledger: Pulse-standalone
@@ -23,8 +23,8 @@ export default async function WorkItemsPage({
 
   return (
     <MissionControlSectionShell
-      title="Work"
-      description="Review approvals, tickets, and handoffs that need a person."
+      title="Work Queue"
+      description="Review human approvals, tickets, and handoffs across the workspace."
       orgId={workspace.id}
       workspaceSlug={workspaceSlug}
     >

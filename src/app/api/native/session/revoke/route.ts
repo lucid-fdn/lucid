@@ -11,10 +11,9 @@ export async function POST(request: NextRequest) {
   try {
     const userId = await requireUserId()
     const input = nativeSessionRevokeInputSchema.parse(await request.json())
-    revokeNativeSession(userId, input)
+    await revokeNativeSession(userId, input)
     return NextResponse.json({ ok: true })
   } catch (error) {
     return nativeApiError(error, 'POST /api/native/session/revoke')
   }
 }
-

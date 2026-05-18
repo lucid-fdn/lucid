@@ -97,7 +97,7 @@ export function MissionControlContextSidebar({
       </NavSection>
 
       <NavSection title="Operate" defaultOpen>
-        {links.work ? <NavItem href={links.work} icon={BriefcaseBusiness} label="Work" /> : null}
+        {links.work ? <NavItem href={links.work} icon={BriefcaseBusiness} label="Work Queue" /> : null}
         {links.routines ? <NavItem href={links.routines} icon={CalendarClock} label="Routines" /> : null}
         {links.agentOps ? <NavItem href={links.agentOps} icon={ClipboardCheck} label="Agent Ops" /> : null}
         {links.inbox ? <NavItem href={links.inbox} icon={Inbox} label="Needs Human" /> : null}

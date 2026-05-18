@@ -10,9 +10,8 @@ export async function POST(_request: NextRequest, context: { params: Promise<{ i
   try {
     const userId = await requireUserId()
     const { id } = await context.params
-    return NextResponse.json(explainNativeApproval(userId, id))
+    return NextResponse.json(await explainNativeApproval(userId, id))
   } catch (error) {
     return nativeApiError(error, 'POST /api/native/approvals/[id]/explain')
   }
 }
-

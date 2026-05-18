@@ -59,10 +59,6 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    if (!FEATURE_HUMAN_WORK_ITEMS) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 })
-    }
-
     const rl = await checkRateLimit(getRequestIdentifier(req), RateLimitPresets.RELAXED)
     if (!rl.success) {
       return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
@@ -134,7 +130,7 @@ export async function GET(
 export const POST = withCSRF(async (req: NextRequest, ctx: unknown) => {
   try {
     if (!FEATURE_HUMAN_WORK_ITEMS) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Work queue is not enabled in this environment.' }, { status: 404 })
     }
 
     const rl = await checkRateLimit(getRequestIdentifier(req), RateLimitPresets.STANDARD)

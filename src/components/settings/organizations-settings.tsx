@@ -121,7 +121,7 @@ export function OrganizationsSettings({ userWorkspaces = [] }: OrganizationsSett
           </p>
         </div>
         <Button asChild>
-          <Link href="/onboarding/workspace/new">
+          <Link href="/onboarding/workspace/new?create=1">
             <Plus className="mr-2 h-4 w-4" />
             Create Organization
           </Link>

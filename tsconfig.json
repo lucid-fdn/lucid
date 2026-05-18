@@ -28,6 +28,12 @@
       "@lucid/app-client/*": [
         "./packages/app-client/src/*"
       ],
+      "@lucid/app-core": [
+        "./packages/app-core/src/index.ts"
+      ],
+      "@lucid/app-core/*": [
+        "./packages/app-core/src/*"
+      ],
       "@lucid/browser-checkout-adapter": [
         "./packages/browser-checkout-adapter/src/index.ts"
       ],

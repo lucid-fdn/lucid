@@ -12,9 +12,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     const userId = await requireUserId()
     const { id } = await context.params
     const input = nativeRunControlInputSchema.parse(await request.json())
-    return NextResponse.json(controlNativeRun(userId, id, input))
+    return NextResponse.json(await controlNativeRun(userId, id, input))
   } catch (error) {
     return nativeApiError(error, 'POST /api/native/runs/[id]/control')
   }
 }
-

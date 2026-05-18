@@ -9,9 +9,8 @@ export const dynamic = 'force-dynamic'
 export async function GET() {
   try {
     const userId = await requireUserId()
-    return NextResponse.json(listNativeInbox(userId))
+    return NextResponse.json(await listNativeInbox(userId))
   } catch (error) {
     return nativeApiError(error, 'GET /api/native/inbox')
   }
 }
-

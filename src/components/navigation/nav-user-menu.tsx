@@ -185,7 +185,7 @@ export function NavUserMenu({
       setShowUpgradeCard(true);
       return;
     }
-    router.push("/onboarding/workspace/new");
+    router.push("/onboarding/workspace/new?create=1");
   };
 
   const handleWorkspaceSwitch = (workspaceSlug: string) => {

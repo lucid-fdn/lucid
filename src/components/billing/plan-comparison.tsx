@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { PlanCard, PlanFeature } from './plan-card'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/radix-tabs'
 import { useAuth } from '@/contexts/auth-context'
 import { storePendingUpgrade } from '@/lib/upgrade-flow'
 import { useResolvedFeatureFlags } from '@/contexts/feature-flags-context'

@@ -9,6 +9,7 @@ interface MissionControlSectionShellProps {
   description: string
   orgId?: string
   workspaceSlug?: string
+  hideHeader?: boolean
   children: ReactNode
 }
 
@@ -17,17 +18,20 @@ export function MissionControlSectionShell({
   description,
   orgId,
   workspaceSlug,
+  hideHeader = false,
   children,
 }: MissionControlSectionShellProps) {
   return (
     <PageShell constrained={false}>
-      <PageHeader
-        title={title}
-        description={description}
-        actions={orgId && workspaceSlug ? (
-          <MissionControlGlobalSearch orgId={orgId} workspaceSlug={workspaceSlug} />
-        ) : null}
-      />
+      {!hideHeader ? (
+        <PageHeader
+          title={title}
+          description={description}
+          actions={orgId && workspaceSlug ? (
+            <MissionControlGlobalSearch orgId={orgId} workspaceSlug={workspaceSlug} />
+          ) : null}
+        />
+      ) : null}
       {orgId ? <MissionControlSystemNotices orgId={orgId} /> : null}
       <div className="min-h-0 flex-1">{children}</div>
     </PageShell>

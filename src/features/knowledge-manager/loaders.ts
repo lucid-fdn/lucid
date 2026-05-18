@@ -35,17 +35,17 @@ export async function loadKnowledgeManagerData(input: {
     : null
 
   const [projectPages, teamPages, orgMemories, documentsResult, sources, reviewItemsRaw] = await Promise.all([
-    listKnowledgePages({ orgId: input.orgId, scopeType: 'project', limit: 100 }),
-    listKnowledgePages({ orgId: input.orgId, scopeType: 'team', limit: 100 }),
-    getBoardMemories(input.orgId, { limit: 100 }),
-    listDocuments(input.orgId, { projectId: input.projectId ?? undefined, limit: 100 }),
-    listKnowledgeSources({ orgId: input.orgId, includeArchived: true, limit: 200 }),
-    listKnowledgeMaintenanceEvents({ orgId: input.orgId, status: 'open', limit: 50 }),
+    safeKnowledgeLoad('project knowledge pages', () => listKnowledgePages({ orgId: input.orgId, scopeType: 'project', limit: 100 }), []),
+    safeKnowledgeLoad('team knowledge pages', () => listKnowledgePages({ orgId: input.orgId, scopeType: 'team', limit: 100 }), []),
+    safeKnowledgeLoad('workspace memory', () => getBoardMemories(input.orgId, { limit: 100 }), []),
+    safeKnowledgeLoad('documents', () => listDocuments(input.orgId, { projectId: input.projectId ?? undefined, limit: 100 }), { documents: [], total: 0 }),
+    safeKnowledgeLoad('knowledge sources', () => listKnowledgeSources({ orgId: input.orgId, includeArchived: true, limit: 200 }), []),
+    safeKnowledgeLoad('knowledge review events', () => listKnowledgeMaintenanceEvents({ orgId: input.orgId, status: 'open', limit: 50 }), []),
   ])
   const [projects, teams, assistants] = await Promise.all([
-    getProjectsForWorkspace(input.orgId),
-    getCrews(input.orgId),
-    getAssistants(input.orgId).catch(() => []),
+    safeKnowledgeLoad('projects', () => getProjectsForWorkspace(input.orgId), []),
+    safeKnowledgeLoad('teams', () => getCrews(input.orgId), []),
+    safeKnowledgeLoad('assistants', () => getAssistants(input.orgId), []),
   ])
 
   const projectScopes: KnowledgeManagerScope[] = projects.map((project) => ({
@@ -166,6 +166,22 @@ export async function loadKnowledgeManagerData(input: {
     documents,
     sources: sourceItems,
     reviewItems,
+  }
+}
+
+async function safeKnowledgeLoad<T>(
+  label: string,
+  load: () => Promise<T>,
+  fallback: T,
+): Promise<T> {
+  try {
+    return await load()
+  } catch (error) {
+    console.warn('[knowledge-manager] Partial load failed; rendering available data', {
+      source: label,
+      error: error instanceof Error ? error.message : String(error),
+    })
+    return fallback
   }
 }
 

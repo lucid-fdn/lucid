@@ -11,9 +11,8 @@ export async function POST(request: NextRequest) {
   try {
     const userId = await requireUserId()
     const input = nativeShareInputSchema.parse(await request.json())
-    return NextResponse.json(shareToLucid(userId, input))
+    return NextResponse.json(await shareToLucid(userId, input))
   } catch (error) {
     return nativeApiError(error, 'POST /api/native/share')
   }
 }
-

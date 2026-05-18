@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/radix-tabs';
 import { AlertCircle, Check } from 'lucide-react';
 import { useCanvasStore } from '@/stores/workflow/canvas.store';
 import { toast } from '@/hooks/use-toast';
