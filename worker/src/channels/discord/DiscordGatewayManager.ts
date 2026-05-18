@@ -101,6 +101,12 @@ interface ManagedClient {
   destroy: () => void // cleanup function
 }
 
+interface ClientStartBackoff {
+  failureCount: number
+  nextStartAtMs: number
+  lastError: string
+}
+
 export interface DiscordGuildChannelSummary {
   id: string
   name: string
@@ -222,6 +228,7 @@ export class DiscordGatewayManager {
   private lastError: string | null = null
   private refreshFailureCount = 0
   private nextRefreshAtMs = 0
+  private clientStartBackoffs: Map<string, ClientStartBackoff> = new Map()
 
   constructor(
     supabase: SupabaseClient,
@@ -693,6 +700,10 @@ export class DiscordGatewayManager {
         existing.channels = grouped.channels
         existing.hostedGuildCandidates = grouped.hostedGuildCandidates
       } else {
+        if (this.isClientStartBackedOff(tokenHash, now)) {
+          continue
+        }
+
         // Spin up new client
         console.log(
           `[discord-gw] Starting new client ${tokenHash.slice(0, 8)} with ${grouped.channels.size} channels`,
@@ -713,6 +724,45 @@ export class DiscordGatewayManager {
     console.log(
       `[discord-gw] Active: ${this.clients.size} clients, ${totalChannels} channels`,
     )
+  }
+
+  private isClientStartBackedOff(tokenHash: string, nowMs: number): boolean {
+    const entry = this.clientStartBackoffs.get(tokenHash)
+    return Boolean(entry && entry.nextStartAtMs > nowMs)
+  }
+
+  private recordClientStartFailure(tokenHash: string, error: string): void {
+    const previous = this.clientStartBackoffs.get(tokenHash)
+    const failureCount = Math.min((previous?.failureCount ?? 0) + 1, 8)
+    const backoffMs = Math.min(60_000 * 2 ** (failureCount - 1), 30 * 60_000)
+    this.clientStartBackoffs.set(tokenHash, {
+      failureCount,
+      nextStartAtMs: Date.now() + backoffMs,
+      lastError: error,
+    })
+    this.lastError = error
+  }
+
+  private clearClientStartBackoff(tokenHash: string): void {
+    this.clientStartBackoffs.delete(tokenHash)
+  }
+
+  private async readDiscordErrorMessage(response: Response): Promise<string> {
+    const fallback = `${response.status} ${response.statusText}`.trim()
+    try {
+      const payload = (await response.json()) as { message?: unknown; retry_after?: unknown }
+      const message = typeof payload.message === 'string' && payload.message.trim().length > 0
+        ? payload.message.trim()
+        : fallback
+      const retryAfter =
+        typeof payload.retry_after === 'number' && Number.isFinite(payload.retry_after)
+          ? ` retry_after=${payload.retry_after}s`
+          : ''
+      return `${message}${retryAfter}`
+    } catch {
+      const text = await response.text().catch(() => '')
+      return text.trim().length > 0 ? `${fallback}: ${text.slice(0, 200)}` : fallback
+    }
   }
 
   /**
@@ -1148,9 +1198,10 @@ export class DiscordGatewayManager {
       })
 
       if (!gatewayResp.ok) {
-        const errData = (await gatewayResp.json()) as { message?: string }
+        const errorMessage = await this.readDiscordErrorMessage(gatewayResp)
+        this.recordClientStartFailure(tokenHash, errorMessage)
         console.error(
-          `[discord-gw] Failed to get gateway for ${tokenHash.slice(0, 8)}: ${errData.message}`,
+          `[discord-gw] Failed to get gateway for ${tokenHash.slice(0, 8)}: ${errorMessage}`,
         )
         return
       }
@@ -1386,8 +1437,10 @@ export class DiscordGatewayManager {
       }
 
       this.clients.set(tokenHash, client)
+      this.clearClientStartBackoff(tokenHash)
     } catch (err) {
-      this.lastError = err instanceof Error ? err.message : String(err)
+      const errorMessage = err instanceof Error ? err.message : String(err)
+      this.recordClientStartFailure(tokenHash, errorMessage)
       console.error(
         `[discord-gw] Failed to create client ${tokenHash.slice(0, 8)}:`,
         err,

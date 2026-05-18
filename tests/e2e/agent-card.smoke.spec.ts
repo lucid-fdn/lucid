@@ -1,6 +1,30 @@
 import { expect, test } from '@playwright/test'
 import { createAssistant, deleteAssistantBestEffort, getCsrfToken, getWorkspaceContext } from './helpers'
 
+async function runCommand(page: import('@playwright/test').Page, label: string) {
+  await page.evaluate(() => {
+    document.dispatchEvent(new KeyboardEvent('keydown', {
+      key: 'k',
+      code: 'KeyK',
+      metaKey: true,
+      ctrlKey: true,
+      bubbles: true,
+      cancelable: true,
+    }))
+  })
+
+  const search = page.getByPlaceholder('Type a command or search...')
+  if (!await search.isVisible({ timeout: 2_500 }).catch(() => false)) {
+    await page.locator('button').filter({ hasText: 'Commands' }).last().click({ timeout: 5_000 })
+  }
+  await expect(search).toBeVisible({ timeout: 10_000 })
+  await search.fill(label)
+  const commandItem = page.locator('[cmdk-item]').filter({ hasText: label }).first()
+  await expect(commandItem).toHaveCount(1, { timeout: 10_000 })
+  await commandItem.evaluate((node) => (node as HTMLElement).click())
+  await page.keyboard.press('Escape')
+}
+
 test.describe('Agent Card smoke', () => {
   test.describe.configure({ timeout: 8 * 60_000 })
 
@@ -9,6 +33,8 @@ test.describe('Agent Card smoke', () => {
     const csrfToken = await getCsrfToken(page)
     const agentName = `E2E Agent Card ${Date.now()}`
     const updatedName = `${agentName} Updated`
+    const revertedFromName = updatedName
+    const secondName = `${agentName} Second`
     let assistantId: string | null = null
 
     try {
@@ -76,6 +102,45 @@ test.describe('Agent Card smoke', () => {
       const prompt = identityPayload.identityPackage?.compiledPromptSections?.join('\n') ?? ''
       expect(prompt).toContain('## SOUL')
       expect(prompt).not.toContain('"profile"')
+
+      await runCommand(page, 'Preview Agent Card Runtime Prompt')
+      await expect(page.getByTestId('agent-card-panel').getByText('Runtime Prompt')).toBeVisible({ timeout: 60_000 })
+      await runCommand(page, 'Export Agent Card')
+      await expect(jsonEditor).toHaveValue(/"card_hash"/, { timeout: 60_000 })
+
+      const second = JSON.parse(await jsonEditor.inputValue()) as {
+        profile: { name: string; bio: string[]; adjectives: string[]; topics: string[] }
+        style: { all: string[] }
+        guardrails: { never: string[] }
+      }
+      second.profile.name = secondName
+      second.profile.bio = ['Second E2E card-authored identity.']
+      await jsonEditor.fill(JSON.stringify(second, null, 2))
+
+      const secondApplyResponsePromise = page.waitForResponse((response) =>
+        response.url().includes(`/api/assistants/${assistantId}/agent-card/import`) &&
+        response.request().method() === 'POST' &&
+        response.status() !== 200,
+      )
+      await page.getByTestId('agent-card-apply').click()
+      expect((await secondApplyResponsePromise).status()).toBe(201)
+      await expect(page.getByTestId('agent-card-revert-SOUL-1')).toBeVisible({ timeout: 60_000 })
+
+      const revertResponsePromise = page.waitForResponse((response) =>
+        response.url().includes(`/api/assistants/${assistantId}/identity`) &&
+        response.request().method() === 'POST',
+      )
+      await page.getByTestId('agent-card-revert-SOUL-1').click()
+      expect((await revertResponsePromise).status()).toBe(201)
+      await expect.poll(async () => {
+        const identityResponse = await page.request.get(`/api/assistants/${assistantId}/identity`, { timeout: 120_000 })
+        const latest = await identityResponse.json() as typeof identityPayload
+        const activeSoul = latest.documents?.find((doc) => doc.document_type === 'SOUL' && doc.status === 'active')
+        return {
+          name: (activeSoul?.content.profile as { name?: string } | undefined)?.name,
+          version: activeSoul?.version ?? 0,
+        }
+      }, { timeout: 60_000 }).toEqual({ name: revertedFromName, version: 3 })
 
       await page.getByTestId('agent-card-export').click()
       await expect(jsonEditor).toHaveValue(/"card_hash"/, { timeout: 60_000 })

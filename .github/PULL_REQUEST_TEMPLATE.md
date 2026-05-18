@@ -16,7 +16,7 @@
 
 - [ ] Public-safe changes pass `npm run oss:check`
 - [ ] Secret-sensitive changes pass `npm run oss:secrets -- --scope private`
-- [ ] Dependency changes pass `npm run oss:license -- --root . --out .oss-export/reports/private-sbom.cdx.json`
+- [ ] Dependency changes pass `npm run oss:license -- --root . --out .oss-reports/sbom.cdx.json`
 - [ ] Native app, signing, store, and release-ops files are intentionally private or explicitly excluded from export
 
 ## Screenshots

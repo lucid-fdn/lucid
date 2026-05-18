@@ -80,6 +80,30 @@ function isAgentCardShape(value: unknown): value is AgentCard {
   return Boolean(value && typeof value === 'object' && !Array.isArray(value) && (value as { kind?: unknown }).kind === 'agent_card')
 }
 
+function fieldIssues(report: LucidCardValidationReport | undefined, path: string) {
+  return report?.issues.filter((issue) => issue.path === path || issue.path.startsWith(`${path}.`)) ?? []
+}
+
+function FieldIssues({ issues }: { issues: ReturnType<typeof fieldIssues> }) {
+  if (!issues.length) return null
+  return (
+    <div className="space-y-1" data-testid="agent-card-field-issues">
+      {issues.map((issue) => (
+        <p key={`${issue.code}-${issue.path}`} className={cn(
+          'text-[10px] leading-relaxed',
+          issue.severity === 'blocking' ? 'text-red-400' : issue.severity === 'warning' ? 'text-amber-400' : 'text-muted-foreground',
+        )}>
+          {issue.message}
+        </p>
+      ))}
+    </div>
+  )
+}
+
+function policyKeyCount(value: Record<string, unknown> | undefined): number {
+  return Object.keys(value ?? {}).length
+}
+
 export function AgentCardPanel({ assistantId }: AgentCardPanelProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [isBusy, setIsBusy] = useState(false)
@@ -324,6 +348,9 @@ export function AgentCardPanel({ assistantId }: AgentCardPanelProps) {
 
   const validation = preview?.validation
   const resolution = preview?.resolution ?? state?.resolution
+  const profileNameIssues = fieldIssues(validation, 'profile.name')
+  const guardrailIssues = fieldIssues(validation, 'guardrails.never')
+  const promptIssues = fieldIssues(validation, 'prompt')
 
   if (isLoading) {
     return <PanelStateCard icon={<Loader2 className="h-4 w-4 animate-spin text-primary" />} title="Loading Agent Card" subtitle="Resolving identity and inherited context." />
@@ -344,14 +371,14 @@ export function AgentCardPanel({ assistantId }: AgentCardPanelProps) {
           </div>
         </div>
 
-        <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.75fr)_320px]">
+        <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_420px]">
           <div className="space-y-3">
             {formCard ? (
               <>
                 <PanelDetailBlock>
                   <p className="text-xs font-medium">Profile</p>
-                  <div className="mt-2 grid gap-2 md:grid-cols-2">
-                    <div className="space-y-1.5"><Label className="text-[10px]">Name</Label><Input data-testid="agent-card-profile-name" value={formCard.profile.name} onChange={(event) => updateDraft((card) => ({ ...card, profile: { ...card.profile, name: event.target.value } }))} /></div>
+                  <div className="mt-2 grid gap-3 lg:grid-cols-2">
+                    <div className="space-y-1.5"><Label className="text-[10px]">Name</Label><Input data-testid="agent-card-profile-name" value={formCard.profile.name} onChange={(event) => updateDraft((card) => ({ ...card, profile: { ...card.profile, name: event.target.value } }))} /><FieldIssues issues={profileNameIssues} /></div>
                     <div className="space-y-1.5"><Label className="text-[10px]">Description</Label><Input value={formCard.profile.description ?? ''} onChange={(event) => updateDraft((card) => ({ ...card, profile: { ...card.profile, description: event.target.value || undefined } }))} /></div>
                     <div className="space-y-1.5"><Label className="text-[10px]">Bio</Label><Textarea className="min-h-20 text-xs" value={listToText(formCard.profile.bio)} onChange={(event) => updateDraft((card) => ({ ...card, profile: { ...card.profile, bio: textToList(event.target.value) } }))} /></div>
                     <div className="space-y-1.5"><Label className="text-[10px]">Traits</Label><Textarea className="min-h-20 text-xs" value={listToText(formCard.profile.adjectives)} onChange={(event) => updateDraft((card) => ({ ...card, profile: { ...card.profile, adjectives: textToList(event.target.value) } }))} /></div>
@@ -359,15 +386,18 @@ export function AgentCardPanel({ assistantId }: AgentCardPanelProps) {
                 </PanelDetailBlock>
                 <PanelDetailBlock>
                   <p className="text-xs font-medium">Voice, Style, Guardrails</p>
-                  <div className="mt-2 grid gap-2 md:grid-cols-3">
+                  <div className="mt-2 grid gap-3 lg:grid-cols-3">
                     <Textarea className="min-h-24 text-xs" placeholder="Voice summary" value={formCard.voice.summary ?? ''} onChange={(event) => updateDraft((card) => ({ ...card, voice: { ...card.voice, summary: event.target.value || undefined } }))} />
                     <Textarea className="min-h-24 text-xs" placeholder="Style, one per line" value={listToText(formCard.style.all)} onChange={(event) => updateDraft((card) => ({ ...card, style: { ...card.style, all: textToList(event.target.value) } }))} />
-                    <Textarea className="min-h-24 text-xs" placeholder="Never, one per line" value={listToText(formCard.guardrails.never)} onChange={(event) => updateDraft((card) => ({ ...card, guardrails: { ...card.guardrails, never: textToList(event.target.value) } }))} />
+                    <div className="space-y-1.5">
+                      <Textarea className="min-h-24 text-xs" placeholder="Never, one per line" value={listToText(formCard.guardrails.never)} onChange={(event) => updateDraft((card) => ({ ...card, guardrails: { ...card.guardrails, never: textToList(event.target.value) } }))} />
+                      <FieldIssues issues={guardrailIssues} />
+                    </div>
                   </div>
                 </PanelDetailBlock>
                 <PanelDetailBlock>
                   <p className="text-xs font-medium">Examples, Knowledge, Policies</p>
-                  <div className="mt-2 grid gap-2 md:grid-cols-3">
+                  <div className="mt-2 grid gap-3 lg:grid-cols-3">
                     <Textarea className="min-h-24 text-xs" placeholder="Post examples" value={listToText(formCard.examples.post_examples)} onChange={(event) => updateDraft((card) => ({ ...card, examples: { ...card.examples, post_examples: textToList(event.target.value) } }))} />
                     <Textarea className="min-h-24 text-xs" placeholder="Knowledge snippets" value={listToText(formCard.knowledge.snippets)} onChange={(event) => updateDraft((card) => ({ ...card, knowledge: { ...card.knowledge, snippets: textToList(event.target.value) } }))} />
                     <Textarea className="min-h-24 text-xs font-mono" placeholder="Access policy JSON" value={formatJson(formCard.policies.access_policy ?? {})} onChange={(event) => updateDraft((card) => ({ ...card, policies: { ...card.policies, access_policy: safeJsonRecord(event.target.value) } }))} />
@@ -406,6 +436,8 @@ export function AgentCardPanel({ assistantId }: AgentCardPanelProps) {
               <div className="flex items-center gap-2 text-xs text-muted-foreground"><Switch checked={createKnowledgeSnippets} onCheckedChange={setCreateKnowledgeSnippets} />Snippets to context</div>
             </div>
             <Textarea id="agent-card-json" data-testid="agent-card-json" value={cardJson} onChange={(event) => setCardJson(event.target.value)} spellCheck={false} className={cn('min-h-[420px] font-mono text-xs', parsedCard ? '' : 'border-red-500/50')} />
+            {!parsedCard ? <p className="text-[10px] text-red-400">JSON must parse before preview or apply.</p> : null}
+            <FieldIssues issues={promptIssues} />
             <div className="flex flex-wrap gap-2">
               <Button data-testid="agent-card-preview-apply" size="sm" variant="outline" onClick={() => void previewImport(false)} disabled={isBusy || !parsedCard}>{isBusy ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Upload className="mr-1.5 h-3.5 w-3.5" />}Preview Apply</Button>
               <Button data-testid="agent-card-apply" size="sm" onClick={() => void previewImport(true)} disabled={isBusy || !parsedCard || validation?.status === 'fail'}><Save className="mr-1.5 h-3.5 w-3.5" />Apply</Button>
@@ -413,11 +445,13 @@ export function AgentCardPanel({ assistantId }: AgentCardPanelProps) {
             </div>
           </div>
 
-          <div className="space-y-3">
+          <div className="grid gap-3 md:grid-cols-2 xl:col-span-2 xl:grid-cols-4">
             <PanelDetailBlock>
               <p className="text-xs font-medium">Inherited Context</p>
               <PanelInfoRow label="Organization card" value={resolution?.organization_card ? 'resolved' : 'empty'} />
               <PanelInfoRow label="Project card" value={resolution?.project_card ? 'resolved' : 'empty'} />
+              <PanelInfoRow label="Org policy keys" value={policyKeyCount(resolution?.organization_card?.policies.compliance)} />
+              <PanelInfoRow label="Project policy keys" value={policyKeyCount(resolution?.project_card?.policies.access)} />
               <PanelInfoRow label="Prompt chars" value={`${resolution?.prompt_budget.chars ?? 0} / ${resolution?.prompt_budget.cap ?? 0}`} />
               <PanelInfoRow label="Conflicts" value={resolution?.conflicts.length ?? 0} />
             </PanelDetailBlock>
@@ -430,6 +464,30 @@ export function AgentCardPanel({ assistantId }: AgentCardPanelProps) {
                   <PanelInfoRow label="Identity docs" value={preview.diff.identity_documents.length} />
                   <PanelInfoRow label="Context proposals" value={preview.diff.shared_context_records.length} />
                   <PanelInfoRow label="Can apply" value={preview.can_apply ? 'yes' : 'no'} />
+                  <div className="space-y-1.5 pt-1" data-testid="agent-card-identity-diff">
+                    {preview.diff.identity_documents.map((document) => (
+                      <div key={`${document.document_type}-${document.summary}`} className="rounded-md border border-border/60 px-2 py-1.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-medium">{document.document_type}</span>
+                          <Badge variant="outline" className="h-5 text-[9px]">{document.action}</Badge>
+                        </div>
+                        <p className="mt-0.5 text-[10px] text-muted-foreground">{document.summary}</p>
+                      </div>
+                    ))}
+                  </div>
+                  {preview.diff.shared_context_records.length ? (
+                    <div className="space-y-1.5 pt-1" data-testid="agent-card-context-diff">
+                      {preview.diff.shared_context_records.map((record, index) => (
+                        <div key={`${record.record_type}-${index}`} className="rounded-md border border-border/60 px-2 py-1.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-medium">{record.title}</span>
+                            <Badge variant="outline" className="h-5 text-[9px]">{record.record_type}</Badge>
+                          </div>
+                          <p className="mt-0.5 line-clamp-2 text-[10px] text-muted-foreground">{record.body}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
               ) : (
                 <PanelEmptyState icon={<ShieldCheck className="h-4 w-4 text-muted-foreground" />} title="No preview yet" description="Preview before apply to see exact mutations." />
@@ -454,7 +512,7 @@ export function AgentCardPanel({ assistantId }: AgentCardPanelProps) {
                 {agentCardDocuments.length ? agentCardDocuments.map((document) => (
                   <div key={document.id} className="flex items-center justify-between gap-2 rounded-md border border-border/60 px-2 py-1.5 text-xs">
                     <div className="min-w-0"><p className="truncate font-medium">{document.document_type} v{document.version}</p><p className="text-[10px] text-muted-foreground">{document.status}</p></div>
-                    <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" disabled={isBusy || document.status === 'active'} onClick={() => void revertIdentityDocument(document)}><RotateCcw className="mr-1 h-3 w-3" />Revert</Button>
+                    <Button data-testid={`agent-card-revert-${document.document_type}-${document.version}`} size="sm" variant="ghost" className="h-7 px-2 text-xs" disabled={isBusy || document.status === 'active'} onClick={() => void revertIdentityDocument(document)}><RotateCcw className="mr-1 h-3 w-3" />Revert</Button>
                   </div>
                 )) : <PanelEmptyState icon={<History className="h-4 w-4 text-muted-foreground" />} title="No Agent Card versions" description="Apply an Agent Card to create identity document history." />}
               </ScrollArea>

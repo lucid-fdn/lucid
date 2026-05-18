@@ -39,6 +39,14 @@ If your workspace has provider API keys configured, agents route directly to tha
 
 ## Configuring Agent Behavior
 
+### Agent Cards
+
+Use the **Agent Card** panel in the agent command center for durable persona and policy configuration. The panel provides friendly fields for profile, voice, style, guardrails, examples, knowledge snippets, and policies, plus an advanced JSON editor for precise native Lucid card edits.
+
+Before applying a card, use preview to inspect validation, identity document changes, and any shared context records that will be created. Applying the card creates versioned identity documents; previous Agent Card-authored versions can be reverted from the same panel. Export returns native Lucid JSON with a card hash.
+
+Organization and Project Card sections write through workspace/project operating context, so broader guidance stays in shared context rather than becoming agent identity.
+
 ### System Prompt Best Practices
 
 Your system prompt shapes everything about your agent's behavior. Structure it as:

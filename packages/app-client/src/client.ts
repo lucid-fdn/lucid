@@ -1,12 +1,24 @@
 import { LucidHttpClient, type LucidRequestOptions } from './fetcher.js'
 import {
   nativeBootstrapSchema,
+  nativeActionDispatchResponseSchema,
   nativeDeviceDeleteResponseSchema,
   nativeDeviceListResponseSchema,
   nativeDeviceResponseSchema,
+  nativePushRegistrationResponseSchema,
+  nativeSessionHandoffResponseSchema,
+  nativeVoiceCommandResponseSchema,
+  type NativeActionDispatchInput,
+  type NativeActionDispatchResponse,
   type NativeBootstrap,
   type NativeDeviceListResponse,
   type NativeDeviceResponse,
+  type NativePushRegistrationInput,
+  type NativePushRegistrationResponse,
+  type NativeSessionHandoffInput,
+  type NativeSessionHandoffResponse,
+  type NativeVoiceCommandInput,
+  type NativeVoiceCommandResponse,
   type RegisterNativeDeviceInput,
   type UpdateNativeDeviceInput,
 } from './schemas.js'
@@ -28,6 +40,22 @@ export class LucidAppClient {
 
   registerDevice(input: RegisterNativeDeviceInput): Promise<NativeDeviceResponse> {
     return this.http.post('/api/native/devices', nativeDeviceResponseSchema, input)
+  }
+
+  createSessionHandoff(input: NativeSessionHandoffInput): Promise<NativeSessionHandoffResponse> {
+    return this.http.post('/api/native/session/handoff', nativeSessionHandoffResponseSchema, input)
+  }
+
+  registerPushToken(input: NativePushRegistrationInput): Promise<NativePushRegistrationResponse> {
+    return this.http.post('/api/native/push/register', nativePushRegistrationResponseSchema, input)
+  }
+
+  createVoiceCommand(input: NativeVoiceCommandInput): Promise<NativeVoiceCommandResponse> {
+    return this.http.post('/api/native/voice/commands', nativeVoiceCommandResponseSchema, input)
+  }
+
+  dispatchNativeAction(input: NativeActionDispatchInput): Promise<NativeActionDispatchResponse> {
+    return this.http.post('/api/native/actions/dispatch', nativeActionDispatchResponseSchema, input)
   }
 
   updateDevice(id: string, input: UpdateNativeDeviceInput): Promise<NativeDeviceResponse> {

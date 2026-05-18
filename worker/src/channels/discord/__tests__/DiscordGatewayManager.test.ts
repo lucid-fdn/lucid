@@ -902,6 +902,37 @@ describe('DiscordGatewayManager.handleMessage', () => {
     expect(destroy).not.toHaveBeenCalled()
   })
 
+  it('backs off failed Discord gateway client starts instead of retrying every refresh', async () => {
+    const nowSpy = vi.spyOn(Date, 'now')
+    nowSpy.mockReturnValue(1_000)
+
+    const manager = new DiscordGatewayManager(supabase, 'a'.repeat(64), 'discord-hosted-token')
+    const botToken = 'discord-rate-limited-token'
+    const tokenHash = (manager as any).hashToken(botToken)
+    const channelsByToken = new Map([
+      [
+        botToken,
+        {
+          channels: new Map(),
+          hostedGuildCandidates: new Map(),
+        },
+      ],
+    ])
+    ;(manager as any).loadChannelsGroupedByToken = vi.fn().mockResolvedValue(channelsByToken)
+    ;(manager as any).createClient = vi.fn()
+
+    ;(manager as any).recordClientStartFailure(tokenHash, 'global gateway rate limit')
+
+    await manager.refresh()
+    expect((manager as any).createClient).not.toHaveBeenCalled()
+
+    nowSpy.mockReturnValue(62_000)
+    await manager.refresh()
+    expect((manager as any).createClient).toHaveBeenCalledTimes(1)
+
+    nowSpy.mockRestore()
+  })
+
   it('uses discord_guild_id from channel_config for hosted bindings when external_channel_id drifted', async () => {
     const manager = new DiscordGatewayManager(supabase, 'a'.repeat(64), 'discord-hosted-token')
 

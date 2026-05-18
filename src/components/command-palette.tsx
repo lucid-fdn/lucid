@@ -65,11 +65,13 @@ export function CommandPaletteProvider({ children }: { children: React.ReactNode
   const register = React.useCallback((newCommands: RegisteredCommand[]) => {
     const ids = new Set(newCommands.map(c => c.id))
     commandsRef.current = [...commandsRef.current.filter(c => !ids.has(c.id)), ...newCommands]
+    forceUpdate(version => version + 1)
   }, [])
 
   const unregister = React.useCallback((ids: string[]) => {
     const idSet = new Set(ids)
     commandsRef.current = commandsRef.current.filter(c => !idSet.has(c.id))
+    forceUpdate(version => version + 1)
   }, [])
 
   const registry = React.useMemo<CommandRegistry>(
@@ -123,6 +125,7 @@ export function useCommandPalette() {
  */
 export function useRegisterCommands(commands: RegisteredCommand[]) {
   const context = React.useContext(CommandPaletteContext)
+  const registry = context?.registry
 
   // Stable reference for the command IDs
   const idsRef = React.useRef<string[]>([])
@@ -130,22 +133,22 @@ export function useRegisterCommands(commands: RegisteredCommand[]) {
   commandsRef.current = commands
 
   React.useEffect(() => {
-    if (!context) return
+    if (!registry) return
 
     const ids = commands.map(c => c.id)
     idsRef.current = ids
-    context.registry.register(commands.map((command, index) => ({
+    registry.register(commands.map((command, index) => ({
       ...command,
       onSelect: () => commandsRef.current[index]?.onSelect(),
     })))
 
     return () => {
-      context.registry.unregister(ids)
+      registry.unregister(ids)
     }
     // We intentionally depend on the serialized command IDs to avoid re-registering
     // on every render while still updating when the command set changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [context, commands.map(c => c.id).join(',')])
+  }, [registry, commands.map(c => c.id).join(',')])
 }
 
 // ── Palette Content ────────────────────────────────────────────────
