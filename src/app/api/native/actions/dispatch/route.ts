@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
   try {
     const userId = await requireUserId()
     const input = nativeActionDispatchInputSchema.parse(await request.json())
-    return NextResponse.json(recordNativeActionReceipt(userId, input))
+    return NextResponse.json(await recordNativeActionReceipt(userId, input))
   } catch (error) {
     return nativeApiError(error, 'POST /api/native/actions/dispatch')
   }

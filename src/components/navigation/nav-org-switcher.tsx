@@ -65,7 +65,7 @@ export function NavOrgSwitcher() {
   };
 
   const handleCreateOrg = () => {
-    router.push("/onboarding/workspace/new");
+    router.push("/onboarding/workspace/new?create=1");
     setOpen(false);
   };
 

@@ -11,9 +11,8 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession()
     const input = nativeSessionHandoffInputSchema.parse(await request.json())
-    return NextResponse.json(createNativeSessionHandoff(input, request.nextUrl.origin, session.userId))
+    return NextResponse.json(await createNativeSessionHandoff(input, request.nextUrl.origin, session.userId))
   } catch (error) {
     return nativeApiError(error, 'POST /api/native/session/handoff')
   }
 }
-

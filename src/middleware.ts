@@ -11,6 +11,31 @@ import {
   isPathAccessible 
 } from "@/lib/maintenance-mode";
 
+function getCanonicalAppOrigin(): string | null {
+  const raw = process.env.NEXT_PUBLIC_APP_URL?.trim() || process.env.APP_URL?.trim();
+  if (!raw && process.env.NODE_ENV === "production") return "https://www.lucid.foundation";
+  if (!raw) return null;
+  try {
+    const url = new URL(raw);
+    const hostname = url.hostname.toLowerCase();
+    if (hostname === "localhost" || hostname === "127.0.0.1" || hostname.endsWith(".up.railway.app")) {
+      return process.env.NODE_ENV === "production" ? "https://www.lucid.foundation" : null;
+    }
+    return url.origin;
+  } catch {
+    return process.env.NODE_ENV === "production" ? "https://www.lucid.foundation" : null;
+  }
+}
+
+function shouldRedirectRailwayUiHost(req: NextRequest): boolean {
+  if (process.env.NODE_ENV !== "production") return false;
+  const hostname = (req.headers.get("host") || req.nextUrl.hostname).split(":")[0].toLowerCase();
+  if (!hostname.endsWith(".up.railway.app")) return false;
+  const pathname = req.nextUrl.pathname;
+  if (pathname === "/ready" || pathname.startsWith("/api/")) return false;
+  return Boolean(getCanonicalAppOrigin());
+}
+
 // Industry-standard: Middleware stays lightweight (auth checks only)
 // Business logic belongs in layouts/pages
 export const config = { 
@@ -63,6 +88,15 @@ export function middleware(req: NextRequest) {
   // control plane directly instead of following an auth redirect.
   if (pathname === '/ready') {
     return NextResponse.next();
+  }
+
+  // Privy restricts browser auth to configured app domains. Railway service
+  // URLs are deployment plumbing, not a human login surface, so redirect UI
+  // traffic to the canonical app host while keeping API/webhook/health routes
+  // available on Railway.
+  if (shouldRedirectRailwayUiHost(req)) {
+    const canonical = new URL(req.nextUrl.pathname + req.nextUrl.search, getCanonicalAppOrigin()!);
+    return NextResponse.redirect(canonical, 308);
   }
 
   // === SKIP PAYLOAD CMS ROUTES ===

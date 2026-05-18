@@ -9,9 +9,8 @@ export const dynamic = 'force-dynamic'
 export async function GET() {
   try {
     const userId = await requireUserId()
-    return NextResponse.json(listNativeRuns(userId))
+    return NextResponse.json(await listNativeRuns(userId))
   } catch (error) {
     return nativeApiError(error, 'GET /api/native/runs')
   }
 }
-

@@ -24,9 +24,10 @@ export default async function AgentOpsPage({
   return (
     <MissionControlSectionShell
       title="Agent Ops"
-      description="Launch repeatable workflows and inspect their receipts."
+      description="Keep agents reliable before they touch customers, money, or production workflows."
       orgId={workspace.id}
       workspaceSlug={workspaceSlug}
+      hideHeader
     >
       <AgentOpsClient orgId={workspace.id} workspaceSlug={workspaceSlug} />
     </MissionControlSectionShell>

@@ -30,7 +30,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/radix-tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { applyTemplateParamsToDraft, generationDraftFromBlueprint } from '@/lib/ai/project-generation/draft'
 import {

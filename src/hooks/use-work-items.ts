@@ -41,7 +41,14 @@ export function useWorkItems({
         cache: 'no-store',
       })
       if (!res.ok) {
-        setError('Failed to load work items')
+        let message = 'Failed to load work items'
+        try {
+          const payload = (await res.json()) as { error?: string }
+          message = payload.error || message
+        } catch {
+          // Keep the generic fallback when the server did not return JSON.
+        }
+        setError(message)
         setItems([])
         return
       }

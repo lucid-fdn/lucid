@@ -5,7 +5,6 @@ import {
   BriefcaseBusiness,
   DollarSign,
   FolderKanban,
-  PlayCircle,
   Radar,
   ServerCog,
 } from 'lucide-react'
@@ -33,60 +32,82 @@ function formatUsd(value: number) {
   }).format(value)
 }
 
+function formatCount(value: number, singular: string, plural = `${singular}s`) {
+  return `${value} ${value === 1 ? singular : plural}`
+}
+
+function joinNonZeroCounts(
+  items: Array<{ value: number; singular: string; plural?: string }>,
+  fallback: string,
+) {
+  const parts = items
+    .filter((item) => item.value > 0)
+    .map((item) => formatCount(item.value, item.singular, item.plural))
+
+  return parts.length > 0 ? parts.join(' - ') : fallback
+}
+
 export function WorkspaceOpsOverview({
   data,
   workspaceSlug,
 }: WorkspaceOpsOverviewProps) {
+  const inactiveAgents = Math.max(data.summary.agents - data.summary.activeAgents, 0)
+  const fleetDetail = inactiveAgents > 0
+    ? `${formatCount(data.summary.projects, 'project')} - ${inactiveAgents} offline`
+    : `${formatCount(data.summary.projects, 'project')} - all active agents are online`
+  const attentionValue = data.attentionCount > 0 ? data.attentionCount : 'Clear'
+  const attentionDetail = joinNonZeroCounts(
+    [
+      { value: data.summary.approvals, singular: 'approval' },
+      { value: data.summary.readyWorkItems, singular: 'ready item' },
+      { value: data.summary.nativeMutationBacklog, singular: 'change review' },
+    ],
+    'Nothing needs review',
+  )
+  const runtimeValue = data.summary.runtimeIncidents > 0 ? data.summary.runtimeIncidents : 'Healthy'
+  const runtimeDetail = data.summary.runtimeIncidents > 0
+    ? `${formatCount(data.runtimes.offline, 'offline runtime')} - ${formatUsd(data.summary.costTodayUsd)} today`
+    : `Systems online - ${formatUsd(data.summary.costTodayUsd)} today`
+
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="border-b px-6 py-4">
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-3 lg:grid-cols-3">
           <KPICard
             label="Attention"
-            value={data.attentionCount}
+            value={attentionValue}
             icon={Radar}
-            trend="flat"
-            trendValue={`${data.summary.approvals} approvals`}
+            trendValue={attentionDetail}
             variant={data.attentionCount > 0 ? 'warning' : 'default'}
           />
           <KPICard
-            label="Runtime Incidents"
-            value={data.summary.runtimeIncidents}
+            label="Agents"
+            value={`${data.summary.activeAgents}/${data.summary.agents}`}
+            icon={FolderKanban}
+            trendValue={fleetDetail}
+            variant={data.summary.unhealthyAgents > 0 ? 'warning' : 'default'}
+          />
+          <KPICard
+            label="Runtime & Spend"
+            value={runtimeValue}
             icon={ServerCog}
-            trend="flat"
-            trendValue={`${data.runtimes.offline} offline`}
+            trendValue={runtimeDetail}
             variant={data.summary.runtimeIncidents > 0 ? 'error' : 'default'}
           />
-          <KPICard
-            label="Active Runs"
-            value={data.summary.activeRuns}
-            icon={PlayCircle}
-          />
-          <KPICard
-            label="Spend Today"
-            value={formatUsd(data.summary.costTodayUsd)}
-            icon={DollarSign}
-          />
-        </div>
-        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-          <span>{data.summary.projects} projects</span>
-          <span>{data.summary.activeAgents}/{data.summary.agents} agents active</span>
-          <span>{data.summary.readyWorkItems} ready work</span>
-          <span>{data.summary.nativeMutationBacklog} proposed changes</span>
         </div>
       </div>
 
       <div className="grid min-h-0 flex-1 gap-6 overflow-auto p-6 xl:grid-cols-[1.25fr_1fr]">
         <div className="space-y-6">
           <PageSection
-            title="Hot Projects"
-            description="Projects most likely to need review."
+            title="Projects Needing Attention"
+            description="The workspace areas most likely to need a decision."
           >
             <div className="space-y-3">
               {data.hotProjects.length === 0 ? (
                 <EmptyState
-                  title="No project pressure right now"
-                  description="Mission Control will surface projects here when approvals, failures, or blocked work need review."
+                  title="No projects need attention"
+                  description="Projects will appear here when work stalls, approvals wait, or reliability drops."
                 />
               ) : (
                 data.hotProjects.map((project) => (
@@ -117,14 +138,14 @@ export function WorkspaceOpsOverview({
           </PageSection>
 
           <PageSection
-            title="Approvals Waiting"
-            description="Requests currently blocking progress."
+            title="Waiting On You"
+            description="Approvals and decisions blocking forward progress."
           >
             <div className="space-y-3">
               {data.pendingApprovals.length === 0 ? (
                 <EmptyState
-                  title="No approvals waiting"
-                  description="When agents need human approval, the blocking request will appear here."
+                  title="Nothing is waiting on approval"
+                  description="Agent requests that need a human decision will appear here."
                 />
               ) : (
                 data.pendingApprovals.map((approval) => (
@@ -159,14 +180,14 @@ export function WorkspaceOpsOverview({
 
         <div className="space-y-6">
           <PageSection
-            title="Ready Work"
-            description="Items ready for operator action."
+            title="Ready To Pick Up"
+            description="Work that can move now."
           >
             <div className="space-y-3">
               {data.readyWorkItems.length === 0 ? (
                 <EmptyState
-                  title="No ready work items"
-                  description="Project work that is ready for operator action will appear here."
+                  title="No work is waiting"
+                  description="Ready work appears here when a project has a clear next action."
                 />
               ) : (
                 data.readyWorkItems.map((item) => (
@@ -198,14 +219,14 @@ export function WorkspaceOpsOverview({
           </PageSection>
 
           <PageSection
-            title="Failure Signals"
-            description="Recent failures and degraded execution."
+            title="Reliability"
+            description="Failures, stalled execution, and degraded runtime signals."
           >
             <div className="space-y-3">
               {data.failures.length === 0 ? (
                 <EmptyState
-                  title="No active failure signals"
-                  description="Runtime incidents, failed agents, and degraded execution signals will collect here."
+                  title="No reliability issues"
+                  description="Failures and degraded execution will surface here when they need review."
                 />
               ) : (
                 data.failures.map((failure) => (

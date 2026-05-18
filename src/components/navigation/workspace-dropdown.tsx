@@ -160,7 +160,7 @@ export function WorkspaceDropdown({
       setShowUpgradeCard(true)
     } else {
       // Allowed - navigate to create workspace form
-      router.push('/onboarding/workspace/new')
+      router.push('/onboarding/workspace/new?create=1')
     }
   }
   

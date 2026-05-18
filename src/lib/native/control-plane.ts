@@ -27,6 +27,24 @@ import type {
   NativeVoiceCommandResponse,
 } from '@lucid/app-client'
 
+import {
+  createNativeSessionHandoffRow,
+  createNativeVoiceCommandRow,
+  controlNativeRunRow,
+  decideNativeApprovalRow,
+  getNativeApprovalRow,
+  getNativeRunRow,
+  hasConfiguredSupabase,
+  isNativeControlPlanePersistenceUnavailable,
+  listNativeApprovalsRows,
+  listNativeRunEventRows,
+  listNativeRunRows,
+  recordNativeActionReceiptRow,
+  refreshNativeSessionRow,
+  revokeNativeSessionRow,
+  shareToLucidRow,
+} from '@/lib/db/native-control-plane'
+
 type NativeUserState = {
   approvals: NativeApproval[]
   runs: NativeRun[]
@@ -91,12 +109,26 @@ function getState(userId: string): NativeUserState {
   return seeded
 }
 
-export function createNativeSessionHandoff(
+export async function createNativeSessionHandoff(
   input: NativeSessionHandoffInput,
   origin: string,
   userId: string | null,
-): NativeSessionHandoffResponse {
-  const handoffId = id('handoff')
+): Promise<NativeSessionHandoffResponse> {
+  let handoffId = id('handoff')
+  let status: NativeSessionHandoffResponse['status'] = userId ? 'completed' : 'pending'
+  let expiresAt = new Date(Date.now() + 10 * 60_000).toISOString()
+
+  if (hasConfiguredSupabase()) {
+    try {
+      const row = await createNativeSessionHandoffRow(input, userId)
+      handoffId = row.id
+      status = row.status
+      expiresAt = row.expiresAt
+    } catch (error) {
+      if (!isNativeControlPlanePersistenceUnavailable(error)) throw error
+    }
+  }
+
   const authorizeUrl = new URL('/login', origin)
   authorizeUrl.searchParams.set('native_handoff', handoffId)
   authorizeUrl.searchParams.set('provider', input.provider ?? 'privy')
@@ -108,13 +140,24 @@ export function createNativeSessionHandoff(
   return {
     handoffId,
     provider: input.provider ?? 'privy',
-    status: userId ? 'completed' : 'pending',
+    status,
     authorizeUrl: authorizeUrl.toString(),
-    expiresAt: new Date(Date.now() + 10 * 60_000).toISOString(),
+    expiresAt,
   }
 }
 
-export function refreshNativeSession(userId: string, input: NativeSessionRefreshInput): NativeSessionRefreshResponse {
+export async function refreshNativeSession(
+  userId: string,
+  input: NativeSessionRefreshInput,
+): Promise<NativeSessionRefreshResponse> {
+  if (hasConfiguredSupabase()) {
+    try {
+      return await refreshNativeSessionRow(userId, input)
+    } catch (error) {
+      if (!isNativeControlPlanePersistenceUnavailable(error)) throw error
+    }
+  }
+
   const existing = refreshTokens.get(input.refreshToken)
   if (existing && (existing.revoked || existing.userId !== userId || existing.deviceId !== input.deviceId)) {
     throw new Error('Invalid native refresh token.')
@@ -135,14 +178,38 @@ export function refreshNativeSession(userId: string, input: NativeSessionRefresh
   }
 }
 
-export function revokeNativeSession(userId: string, input: NativeSessionRevokeInput): void {
+export async function revokeNativeSession(userId: string, input: NativeSessionRevokeInput): Promise<void> {
+  if (hasConfiguredSupabase()) {
+    try {
+      await revokeNativeSessionRow(userId, input)
+      return
+    } catch (error) {
+      if (!isNativeControlPlanePersistenceUnavailable(error)) throw error
+    }
+  }
+
   if (input.refreshToken) {
     const session = refreshTokens.get(input.refreshToken)
     if (session?.userId === userId) session.revoked = true
   }
 }
 
-export function listNativeInbox(userId: string): NativeInboxResponse {
+export async function listNativeInbox(userId: string): Promise<NativeInboxResponse> {
+  if (hasConfiguredSupabase()) {
+    try {
+      const [approvals, allRuns] = await Promise.all([
+        listNativeApprovalsRows(userId),
+        listNativeRunRows(userId),
+      ])
+      return {
+        approvals,
+        runs: allRuns.filter((run) => run.needsApproval || run.status === 'blocked'),
+      }
+    } catch (error) {
+      if (!isNativeControlPlanePersistenceUnavailable(error)) throw error
+    }
+  }
+
   const state = getState(userId)
   return {
     approvals: state.approvals.filter((approval) => approval.status === 'pending'),
@@ -150,14 +217,302 @@ export function listNativeInbox(userId: string): NativeInboxResponse {
   }
 }
 
-export function listNativeRuns(userId: string): { runs: NativeRun[] } {
+export async function listNativeRuns(userId: string): Promise<{ runs: NativeRun[] }> {
+  if (hasConfiguredSupabase()) {
+    try {
+      return { runs: await listNativeRunRows(userId) }
+    } catch (error) {
+      if (!isNativeControlPlanePersistenceUnavailable(error)) throw error
+    }
+  }
+
   return { runs: getState(userId).runs }
 }
 
-export function getNativeApprovalDetail(userId: string, approvalId: string): NativeApprovalDetailResponse {
-  const approval = getState(userId).approvals.find((item) => item.id === approvalId)
+export async function getNativeApprovalDetail(
+  userId: string,
+  approvalId: string,
+): Promise<NativeApprovalDetailResponse> {
+  let approval: NativeApproval | null = null
+
+  if (hasConfiguredSupabase()) {
+    try {
+      approval = await getNativeApprovalRow(userId, approvalId)
+    } catch (error) {
+      if (!isNativeControlPlanePersistenceUnavailable(error)) throw error
+    }
+  }
+
+  approval ??= getState(userId).approvals.find((item) => item.id === approvalId) ?? null
   if (!approval) throw new Error('Native approval not found.')
 
+  return buildApprovalDetail(approval)
+}
+
+export async function getNativeRunDetail(userId: string, runId: string): Promise<NativeRunDetailResponse> {
+  let run: NativeRun | null = null
+  let persistedTimeline: NativeRunTimelineEvent[] = []
+
+  if (hasConfiguredSupabase()) {
+    try {
+      run = await getNativeRunRow(userId, runId)
+      if (run) persistedTimeline = await listNativeRunEventRows(userId, runId)
+    } catch (error) {
+      if (!isNativeControlPlanePersistenceUnavailable(error)) throw error
+    }
+  }
+
+  const state = getState(userId)
+  run ??= state.runs.find((item) => item.id === runId) ?? null
+  if (!run) throw new Error('Native run not found.')
+
+  const timeline = persistedTimeline.length > 0 ? persistedTimeline : buildFallbackRunTimeline(run, state)
+
+  return {
+    run,
+    timeline: timeline.sort((left, right) => new Date(right.at).getTime() - new Date(left.at).getTime()),
+  }
+}
+
+export async function explainNativeApproval(
+  userId: string,
+  approvalId: string,
+): Promise<NativeApprovalExplainResponse> {
+  const detail = await getNativeApprovalDetail(userId, approvalId)
+
+  return {
+    approvalId,
+    explanation: detail.explanation,
+    risk: detail.approval.risk,
+    recommendedDecision: detail.recommendedDecision,
+  }
+}
+
+export async function decideNativeApproval(
+  userId: string,
+  approvalId: string,
+  input: NativeApprovalDecisionInput,
+): Promise<NativeApprovalDecisionResponse> {
+  let approval: NativeApproval | null = null
+
+  if (hasConfiguredSupabase()) {
+    try {
+      approval = await decideNativeApprovalRow(userId, approvalId, input)
+      if (!approval) throw new Error('Native approval not found.')
+      const receipt = await recordNativeActionReceipt(userId, {
+        featureId: 'approvalWallet',
+        actionId: `${input.decision}:${approvalId}`,
+        deviceId: input.deviceId,
+        idempotencyKey: `${approvalId}:${input.decision}`,
+        payload: { reason: input.reason ?? null },
+        confirmation: input.confirmation,
+      })
+      return { approval, receipt }
+    } catch (error) {
+      if (!isNativeControlPlanePersistenceUnavailable(error)) throw error
+    }
+  }
+
+  const state = getState(userId)
+  approval = state.approvals.find((item) => item.id === approvalId) ?? null
+  if (!approval) throw new Error('Native approval not found.')
+
+  approval.status = input.decision === 'approve' ? 'approved' : 'denied'
+  const receipt = await recordNativeActionReceipt(userId, {
+    featureId: 'approvalWallet',
+    actionId: `${input.decision}:${approvalId}`,
+    deviceId: input.deviceId,
+    idempotencyKey: `${approvalId}:${input.decision}`,
+    payload: { reason: input.reason ?? null },
+    confirmation: input.confirmation,
+  })
+
+  return { approval, receipt }
+}
+
+export async function controlNativeRun(
+  userId: string,
+  runId: string,
+  input: NativeRunControlInput,
+): Promise<NativeRunControlResponse> {
+  let run: NativeRun | null = null
+
+  if (hasConfiguredSupabase()) {
+    try {
+      run = await controlNativeRunRow(userId, runId, input)
+      if (!run) throw new Error('Native run not found.')
+      const receipt = await recordNativeActionReceipt(userId, {
+        featureId: 'liveRunControl',
+        actionId: `${input.action}:${runId}`,
+        deviceId: input.deviceId,
+        idempotencyKey: `${runId}:${input.action}:${input.reason ?? ''}`,
+        payload: { reason: input.reason ?? null },
+        confirmation: input.confirmation,
+      })
+      return { run, receipt }
+    } catch (error) {
+      if (!isNativeControlPlanePersistenceUnavailable(error)) throw error
+    }
+  }
+
+  const state = getState(userId)
+  run = state.runs.find((item) => item.id === runId) ?? null
+  if (!run) throw new Error('Native run not found.')
+
+  if (input.action === 'pause') run.status = 'paused'
+  if (input.action === 'resume') run.status = 'running'
+  if (input.action === 'cancel') run.status = 'cancelled'
+  if (input.action === 'escalate') {
+    run.status = 'blocked'
+    run.needsApproval = true
+  }
+  run.updatedAt = nowIso()
+
+  const receipt = await recordNativeActionReceipt(userId, {
+    featureId: 'liveRunControl',
+    actionId: `${input.action}:${runId}`,
+    deviceId: input.deviceId,
+    idempotencyKey: `${runId}:${input.action}:${input.reason ?? ''}`,
+    payload: { reason: input.reason ?? null },
+    confirmation: input.confirmation,
+  })
+
+  return { run, receipt }
+}
+
+export async function createNativeVoiceCommand(
+  userId: string,
+  input: NativeVoiceCommandInput,
+): Promise<NativeVoiceCommandResponse> {
+  const transcript = input.transcript?.trim() || 'Audio command received.'
+  const lower = transcript.toLowerCase()
+  const risky = /approve|deny|pause|resume|cancel|escalate|delete|spend|buy|send/.test(lower)
+  const risk = lower.includes('delete') || lower.includes('spend') || lower.includes('buy')
+    ? 'privileged'
+    : risky
+      ? 'confirmation-required'
+      : 'user-initiated'
+  let commandId = id('voice_command')
+
+  if (hasConfiguredSupabase()) {
+    try {
+      commandId = await createNativeVoiceCommandRow(userId, input, {
+        commandId,
+        interpretedCommand: transcript,
+        requiresConfirmation: risky,
+        risk,
+      })
+    } catch (error) {
+      if (!isNativeControlPlanePersistenceUnavailable(error)) throw error
+    }
+  }
+
+  return {
+    commandId,
+    interpretedCommand: transcript,
+    responseText: risky
+      ? 'I understood the command. Review the interpreted action before I execute it.'
+      : 'I understood the command and added it to Lucid.',
+    requiresConfirmation: risky,
+    confirmation: risky
+      ? {
+          actionId: lower.includes('pause') ? 'pause-runs' : 'native-agent-command',
+          risk,
+          prompt: transcript,
+        }
+      : undefined,
+  }
+}
+
+export async function shareToLucid(userId: string, input: NativeShareInput): Promise<NativeShareResponse> {
+  const title = titleForShare(input.intent, input.kind)
+
+  if (hasConfiguredSupabase()) {
+    try {
+      const result = await shareToLucidRow(userId, input, title)
+      await recordNativeActionReceipt(userId, {
+        featureId: 'commandCapture',
+        actionId: `share:${input.intent}`,
+        deviceId: input.deviceId,
+        idempotencyKey: `${input.intent}:${crypto.createHash('sha256').update(input.content).digest('hex')}`,
+        payload: {
+          kind: input.kind,
+          fileName: input.fileName ?? null,
+          mimeType: input.mimeType ?? null,
+        },
+      })
+      return {
+        itemId: result.itemId,
+        status: 'queued',
+        title,
+        deepLink: result.deepLink,
+      }
+    } catch (error) {
+      if (!isNativeControlPlanePersistenceUnavailable(error)) throw error
+    }
+  }
+
+  const itemId = id('share')
+  const state = getState(userId)
+
+  if (input.intent === 'bug-report' || input.intent === 'browser-qa' || input.intent === 'investigate') {
+    state.runs.unshift({
+      id: itemId,
+      title,
+      agentName: input.intent === 'browser-qa' ? 'Browser QA' : 'Ops Copilot',
+      status: 'queued',
+      progress: 0,
+      needsApproval: false,
+      updatedAt: nowIso(),
+      deepLink: `lucid://workspace/default/runs/${itemId}`,
+    })
+  }
+
+  await recordNativeActionReceipt(userId, {
+    featureId: 'commandCapture',
+    actionId: `share:${input.intent}`,
+    deviceId: input.deviceId,
+    idempotencyKey: `${input.intent}:${crypto.createHash('sha256').update(input.content).digest('hex')}`,
+    payload: {
+      kind: input.kind,
+      fileName: input.fileName ?? null,
+      mimeType: input.mimeType ?? null,
+    },
+  })
+
+  return {
+    itemId,
+    status: 'queued',
+    title,
+    deepLink: `lucid://workspace/default/runs/${itemId}`,
+  }
+}
+
+export async function recordNativeActionReceipt(
+  userId: string,
+  input: NativeActionDispatchInput,
+): Promise<NativeActionDispatchResponse> {
+  if (hasConfiguredSupabase()) {
+    try {
+      return await recordNativeActionReceiptRow(userId, input)
+    } catch (error) {
+      if (!isNativeControlPlanePersistenceUnavailable(error)) throw error
+    }
+  }
+
+  const receipt: NativeActionDispatchResponse = {
+    actionId: input.actionId,
+    status: input.confirmation || input.featureId === 'commandCapture' ? 'queued' : 'requires-confirmation',
+    receiptId: id('native_receipt'),
+    message: input.confirmation
+      ? 'Native action accepted with confirmation receipt.'
+      : 'Native action recorded and awaiting confirmation if required.',
+  }
+  getState(userId).receipts.push({ ...receipt, userId, createdAt: nowIso() })
+  return receipt
+}
+
+function buildApprovalDetail(approval: NativeApproval): NativeApprovalDetailResponse {
   const recommendedDecision = approval.risk === 'privileged' ? 'review' : 'approve'
   return {
     approval,
@@ -186,11 +541,7 @@ export function getNativeApprovalDetail(userId: string, approvalId: string): Nat
   }
 }
 
-export function getNativeRunDetail(userId: string, runId: string): NativeRunDetailResponse {
-  const state = getState(userId)
-  const run = state.runs.find((item) => item.id === runId)
-  if (!run) throw new Error('Native run not found.')
-
+function buildFallbackRunTimeline(run: NativeRun, state: NativeUserState): NativeRunTimelineEvent[] {
   const timeline: NativeRunTimelineEvent[] = [
     {
       id: `${run.id}:created`,
@@ -235,145 +586,7 @@ export function getNativeRunDetail(userId: string, runId: string): NativeRunDeta
     })
   }
 
-  return {
-    run,
-    timeline: timeline.sort((left, right) => new Date(right.at).getTime() - new Date(left.at).getTime()),
-  }
-}
-
-export function explainNativeApproval(userId: string, approvalId: string): NativeApprovalExplainResponse {
-  const detail = getNativeApprovalDetail(userId, approvalId)
-
-  return {
-    approvalId,
-    explanation: detail.explanation,
-    risk: detail.approval.risk,
-    recommendedDecision: detail.recommendedDecision,
-  }
-}
-
-export function decideNativeApproval(
-  userId: string,
-  approvalId: string,
-  input: NativeApprovalDecisionInput,
-): NativeApprovalDecisionResponse {
-  const state = getState(userId)
-  const approval = state.approvals.find((item) => item.id === approvalId)
-  if (!approval) throw new Error('Native approval not found.')
-
-  approval.status = input.decision === 'approve' ? 'approved' : 'denied'
-  const receipt = recordNativeActionReceipt(userId, {
-    featureId: 'approvalWallet',
-    actionId: `${input.decision}:${approvalId}`,
-    deviceId: input.deviceId,
-    idempotencyKey: `${approvalId}:${input.decision}`,
-    payload: { reason: input.reason ?? null },
-    confirmation: input.confirmation,
-  })
-
-  return { approval, receipt }
-}
-
-export function controlNativeRun(userId: string, runId: string, input: NativeRunControlInput): NativeRunControlResponse {
-  const state = getState(userId)
-  const run = state.runs.find((item) => item.id === runId)
-  if (!run) throw new Error('Native run not found.')
-
-  if (input.action === 'pause') run.status = 'paused'
-  if (input.action === 'resume') run.status = 'running'
-  if (input.action === 'cancel') run.status = 'cancelled'
-  if (input.action === 'escalate') {
-    run.status = 'blocked'
-    run.needsApproval = true
-  }
-  run.updatedAt = nowIso()
-
-  const receipt = recordNativeActionReceipt(userId, {
-    featureId: 'liveRunControl',
-    actionId: `${input.action}:${runId}`,
-    deviceId: input.deviceId,
-    idempotencyKey: `${runId}:${input.action}:${input.reason ?? ''}`,
-    payload: { reason: input.reason ?? null },
-    confirmation: input.confirmation,
-  })
-
-  return { run, receipt }
-}
-
-export function createNativeVoiceCommand(userId: string, input: NativeVoiceCommandInput): NativeVoiceCommandResponse {
-  const transcript = input.transcript?.trim() || 'Audio command received.'
-  const lower = transcript.toLowerCase()
-  const risky = /approve|deny|pause|resume|cancel|escalate|delete|spend|buy|send/.test(lower)
-
-  return {
-    commandId: id('voice_command'),
-    interpretedCommand: transcript,
-    responseText: risky
-      ? 'I understood the command. Review the interpreted action before I execute it.'
-      : 'I understood the command and added it to Lucid.',
-    requiresConfirmation: risky,
-    confirmation: risky
-      ? {
-          actionId: lower.includes('pause') ? 'pause-runs' : 'native-agent-command',
-          risk: lower.includes('delete') || lower.includes('spend') || lower.includes('buy') ? 'privileged' : 'confirmation-required',
-          prompt: transcript,
-        }
-      : undefined,
-  }
-}
-
-export function shareToLucid(userId: string, input: NativeShareInput): NativeShareResponse {
-  const itemId = id('share')
-  const state = getState(userId)
-  const title = titleForShare(input.intent, input.kind)
-
-  if (input.intent === 'bug-report' || input.intent === 'browser-qa' || input.intent === 'investigate') {
-    state.runs.unshift({
-      id: itemId,
-      title,
-      agentName: input.intent === 'browser-qa' ? 'Browser QA' : 'Ops Copilot',
-      status: 'queued',
-      progress: 0,
-      needsApproval: false,
-      updatedAt: nowIso(),
-      deepLink: `lucid://workspace/default/runs/${itemId}`,
-    })
-  }
-
-  recordNativeActionReceipt(userId, {
-    featureId: 'commandCapture',
-    actionId: `share:${input.intent}`,
-    deviceId: input.deviceId,
-    idempotencyKey: `${input.intent}:${crypto.createHash('sha256').update(input.content).digest('hex')}`,
-    payload: {
-      kind: input.kind,
-      fileName: input.fileName ?? null,
-      mimeType: input.mimeType ?? null,
-    },
-  })
-
-  return {
-    itemId,
-    status: 'queued',
-    title,
-    deepLink: `lucid://workspace/default/runs/${itemId}`,
-  }
-}
-
-export function recordNativeActionReceipt(
-  userId: string,
-  input: NativeActionDispatchInput,
-): NativeActionDispatchResponse {
-  const receipt: NativeActionDispatchResponse = {
-    actionId: input.actionId,
-    status: input.confirmation || input.featureId === 'commandCapture' ? 'queued' : 'requires-confirmation',
-    receiptId: id('native_receipt'),
-    message: input.confirmation
-      ? 'Native action accepted with confirmation receipt.'
-      : 'Native action recorded and awaiting confirmation if required.',
-  }
-  getState(userId).receipts.push({ ...receipt, userId, createdAt: nowIso() })
-  return receipt
+  return timeline
 }
 
 function titleForShare(intent: NativeShareInput['intent'], kind: NativeShareInput['kind']): string {

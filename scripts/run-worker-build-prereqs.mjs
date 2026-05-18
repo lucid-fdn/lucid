@@ -6,6 +6,7 @@ import path from 'node:path'
 import { spawnSync } from 'node:child_process'
 
 const root = process.cwd()
+const npmCommand = 'npm'
 const lockDir = path.join(tmpdir(), 'lucid-worker-build-prereqs.lock')
 const lockStaleMs = 10 * 60 * 1000
 
@@ -63,10 +64,11 @@ function releaseLock() {
 }
 
 function runBuild(packageDir) {
-  const result = spawnSync('npm', ['run', 'build', '--prefix', packageDir], {
+  const result = spawnSync(npmCommand, ['run', 'build', '--prefix', packageDir], {
     cwd: root,
     stdio: 'inherit',
     env: process.env,
+    shell: process.platform === 'win32',
   })
 
   if (result.status !== 0) {

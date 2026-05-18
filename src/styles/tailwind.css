@@ -12,6 +12,16 @@
 
 /* Performance-optimized backdrop blur */
 @layer utilities {
+  .no-visible-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .no-visible-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
   /* Animated data flow for mission control canvas edges */
   .animate-flow {
     animation: edge-flow 1.5s linear infinite;

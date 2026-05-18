@@ -149,17 +149,21 @@ describe('project-centered route redirects', () => {
   })
 
   it('redirects empty projects index directly to project creation', async () => {
-    getDefaultProjectForWorkspaceMock.mockResolvedValue(null)
+    getProjectSummariesForWorkspaceMock.mockResolvedValue([])
 
     await expect(
       ProjectsIndexPage({ params: Promise.resolve({ 'workspace-slug': 'acme' }) }),
     ).rejects.toThrow('NEXT_REDIRECT:/acme/new')
   })
 
-  it('redirects projects index to the default project overview when projects already exist', async () => {
-    await expect(
-      ProjectsIndexPage({ params: Promise.resolve({ 'workspace-slug': 'acme' }) }),
-    ).rejects.toThrow('NEXT_REDIRECT:/acme/projects/ops')
+  it('renders the projects index when projects already exist', async () => {
+    const result = await ProjectsIndexPage({
+      params: Promise.resolve({ 'workspace-slug': 'acme' }),
+    })
+
+    expect(result).toBeTruthy()
+    expect(getProjectSummariesForWorkspaceMock).toHaveBeenCalledWith('org-1')
+    expect(getAssistantsMock).toHaveBeenCalledWith('org-1')
   })
 
   it('redirects empty workspace dashboard directly to project creation', async () => {

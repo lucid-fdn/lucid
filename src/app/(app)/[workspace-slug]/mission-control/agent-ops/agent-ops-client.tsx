@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import {
   AlertTriangle,
@@ -8,17 +8,19 @@ import {
   CalendarClock,
   CheckCircle2,
   ClipboardCheck,
-  FileText,
   Loader2,
   PackageCheck,
   Play,
-  RefreshCw,
   RotateCcw,
   ShieldCheck,
   Square,
   Workflow as WorkflowIcon,
 } from 'lucide-react'
 
+import { AutonomyStatusHero } from '@/components/agent-ops/autonomy-status-hero'
+import { TrustSignals } from '@/components/agent-ops/trust-signals'
+import { AdvancedDiagnosticsSection } from '@/components/agent-ops/advanced-diagnostics'
+import { WorkflowPicker } from '@/components/agent-ops/workflow-picker'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -55,6 +57,10 @@ import {
   AGENT_OPS_RUN_MODES,
   AGENT_OPS_SCOPE_TYPES,
 } from '@/lib/agent-ops/workflow-types'
+import {
+  buildAgentOpsTrustCenterModel,
+  type AgentOpsTrustAction,
+} from '@/lib/agent-ops/trust-center'
 
 interface AgentOpsWorkflowSummary {
   id: AgentOpsWorkflowId
@@ -835,17 +841,6 @@ const STATUS_STYLES: Record<AgentOpsRunStatus, string> = {
   cancelled: 'bg-muted text-muted-foreground border-border',
 }
 
-const SAFETY_LABELS: Record<AgentOpsSafetyMode, string> = {
-  read_only: 'Read-only',
-  approval_gated: 'Approval-gated',
-  write_capable: 'Write-capable',
-}
-
-const EXECUTION_LABELS: Record<AgentOpsExecutionMode, string> = {
-  single_run: 'Single run',
-  dag: 'Workflow',
-}
-
 function formatLabel(value: string) {
   return value
     .replace(/_/g, ' ')
@@ -1135,6 +1130,11 @@ async function readJsonOrNull<T>(response: Response): Promise<T | null> {
   return readJson<T>(response)
 }
 
+async function readJsonBestEffort<T>(response: Response): Promise<T | null> {
+  if (!response.ok) return null
+  return readJson<T>(response)
+}
+
 export function AgentOpsClient({ orgId, workspaceSlug }: AgentOpsClientProps) {
   const searchParams = useSearchParams()
   const [workflows, setWorkflows] = useState<AgentOpsWorkflowSummary[]>([])
@@ -1156,6 +1156,9 @@ export function AgentOpsClient({ orgId, workspaceSlug }: AgentOpsClientProps) {
   const [busyAction, setBusyAction] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  const runCheckRef = useRef<HTMLDivElement | null>(null)
+  const evidenceRef = useRef<HTMLDivElement | null>(null)
+  const diagnosticsRef = useRef<HTMLDivElement | null>(null)
 
   const selectedWorkflow = useMemo(
     () => workflows.find((workflow) => workflow.id === selectedWorkflowId) ?? workflows[0] ?? null,
@@ -1178,14 +1181,39 @@ export function AgentOpsClient({ orgId, workspaceSlug }: AgentOpsClientProps) {
     })
   }, [workflows])
 
-  const metrics = useMemo(() => {
-    return {
-      active: runs.filter((run) => ['queued', 'running', 'blocked'].includes(run.status)).length,
-      completed: runs.filter((run) => run.status === 'completed').length,
-      failed: runs.filter((run) => run.status === 'failed' || run.status === 'cancelled').length,
-      findings: runs.reduce((total, run) => total + run.findingCount, 0),
+  const primaryWorkflows = useMemo(() => {
+    const selected = selectedWorkflow
+    const top = orderedWorkflows.slice(0, 6)
+    if (!selected || top.some((workflow) => workflow.id === selected.id)) return top
+    return [selected, ...top.slice(0, 5)]
+  }, [orderedWorkflows, selectedWorkflow])
+
+  const trustCenter = useMemo(
+    () => buildAgentOpsTrustCenterModel({ overview, runs, workflows }),
+    [overview, runs, workflows],
+  )
+
+  const scrollIntoView = useCallback((node: HTMLElement | null) => {
+    node?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [])
+
+  const handleTrustAction = useCallback((action: AgentOpsTrustAction) => {
+    if (action.runId) {
+      setSelectedRunId(action.runId)
+      scrollIntoView(evidenceRef.current)
+      return
     }
-  }, [runs])
+    if (action.workflowId) {
+      setSelectedWorkflowId(action.workflowId)
+      scrollIntoView(runCheckRef.current)
+      return
+    }
+    if (action.href) {
+      window.location.href = action.href
+      return
+    }
+    scrollIntoView(diagnosticsRef.current)
+  }, [scrollIntoView])
 
   const loadRuns = useCallback(async () => {
     const params = new URLSearchParams({ org_id: orgId, limit: '50' })
@@ -1209,7 +1237,7 @@ export function AgentOpsClient({ orgId, workspaceSlug }: AgentOpsClientProps) {
       if (launchParams.assistantId) overviewParams.set('assistant_id', launchParams.assistantId)
       const [workflowData, overviewData] = await Promise.all([
         readJson<{ workflows: AgentOpsWorkflowSummary[] }>(await fetch('/api/agent-ops/workflows')),
-        readJson<AgentOpsOverview>(
+        readJsonBestEffort<AgentOpsOverview>(
           await fetch(`/api/agent-ops/overview?${overviewParams.toString()}`),
         ),
         readJsonOrNull<{ packs: LucidPackSummary[] }>(
@@ -1948,99 +1976,24 @@ export function AgentOpsClient({ orgId, workspaceSlug }: AgentOpsClientProps) {
         </div>
       }
     >
-      <div className="flex h-full min-h-0 flex-col bg-muted/20">
+      <div className="flex h-full min-h-0 flex-col overflow-y-auto bg-muted/20">
         <div className="border-b bg-background px-6 py-4">
-          <div className="grid gap-3 md:grid-cols-4">
-            <MetricCard label="Active runs" value={metrics.active} icon={<WorkflowIcon className="h-4 w-4" />} />
-            <MetricCard label="Completed" value={metrics.completed} icon={<CheckCircle2 className="h-4 w-4" />} />
-            <MetricCard label="Needs attention" value={metrics.failed} icon={<AlertTriangle className="h-4 w-4" />} />
-            <MetricCard label="Findings" value={metrics.findings} icon={<FileText className="h-4 w-4" />} />
-          </div>
-          <AgentOpsOverviewStrip overview={overview} loading={loading} />
-          <AgentOpsPerformancePanel overview={overview} loading={loading} />
-          <AgentOpsSpecialistTelemetryPanel overview={overview} loading={loading} />
-          <AgentOpsTeamSetupDoctorPanel overview={overview} loading={loading} />
-          <AgentOpsAdvancedConfigurationPanel workspaceSlug={workspaceSlug} />
-          <AgentOpsQualityGatePanel overview={overview} loading={loading} />
-          <AgentOpsPackManagerPanel
-            packs={packs}
-            installs={packInstalls}
-            resources={packResources}
-            loading={loading}
-            busyAction={busyAction}
-            onInstall={(packId) => void installPack(packId)}
-            onUpdateInstall={(installId, action) => void updatePackInstall(installId, action)}
-            onForkResource={(installId, resourceKey) => void updatePackInstall(installId, 'fork_resource', {
-              resourceKey,
-              reason: 'Operator forked from Mission Control before local edits.',
-            })}
-          />
-          <AgentOpsCompletionMatrixPanel overview={overview} loading={loading} />
-          <AgentOpsTeamPolicyPanel overview={overview} loading={loading} />
-          <AgentOpsBudgetControls
-            overview={overview}
-            loading={loading}
-            busy={busyAction === 'performance-budget:update'}
-            scopeLabel={launchParams.projectId ? 'Project budget' : 'Workspace budget'}
-            onSave={(values) => void updatePerformanceBudget(values)}
-          />
-          <AgentOpsAlertControls
-            overview={overview}
-            loading={loading}
-            busy={busyAction === 'performance-alerts:update'}
-            ackBusy={busyAction === 'performance-alerts:ack'}
-            scopeLabel={launchParams.projectId ? 'Project alerts' : 'Workspace alerts'}
-            onSave={(values) => void updatePerformanceAlertControls(values)}
-            onAcknowledge={() => void acknowledgePerformanceAlert()}
-            onSelectWorkflow={setSelectedWorkflowId}
-            onResolve={(alert) => void resolvePerformanceAlert(alert)}
-            resolveBusy={Boolean(overview?.performanceAlert?.fingerprint && busyAction === `performance-alerts:resolve:${overview.performanceAlert.fingerprint}`)}
-          />
-          <AgentOpsAlertHistoryPanel
-            overview={overview}
-            loading={loading}
-            onSelectWorkflow={setSelectedWorkflowId}
-            onResolve={(alert) => void resolvePerformanceAlert(alert)}
-            busyAction={busyAction}
-          />
-          <AgentOpsBrowserOperatorCockpitPanel
-            overview={overview}
-            loading={loading}
-            busyAction={busyAction}
-            onProcedureTrust={(procedureId, action) => void updateBrowserProcedureTrust(procedureId, action)}
-            onPlaybookTrust={(playbookId, action) => void updateBrowserHostPlaybookTrust(playbookId, action)}
-            onSessionHandoff={(session, action) => void updateBrowserSessionHandoff(session, action)}
-          />
-          <AgentOpsBrowserTrustShieldPanel overview={overview} loading={loading} />
-          <AgentOpsBrowserLiveSessionsPanel
-            overview={overview}
-            loading={loading}
-            busyAction={busyAction}
-            onSessionHandoff={(session, action) => void updateBrowserSessionHandoff(session, action)}
-          />
-          <AgentOpsBrowserSharingPanel overview={overview} loading={loading} />
-          <AgentOpsBrowserProceduresPanel
-            overview={overview}
-            loading={loading}
-            busyAction={busyAction}
-            onTrustAction={(procedureId, action) => void updateBrowserProcedureTrust(procedureId, action)}
-          />
-          <AgentOpsBrowserHostPlaybooksPanel
-            overview={overview}
-            loading={loading}
-            busyAction={busyAction}
-            onTrustAction={(playbookId, action) => void updateBrowserHostPlaybookTrust(playbookId, action)}
-          />
-          <AgentOpsDecisionPacingPanel overview={overview} loading={loading} />
-          <AgentOpsDesignOpsPanel overview={overview} loading={loading} />
-          <AgentOpsIntelligencePanel
-            overview={overview}
-            loading={loading}
-            busyAction={busyAction}
-            onArchiveLearning={(learningId) => void updateLearning(learningId, 'archive')}
-            onPromoteLearning={(learningId) => void updateLearning(learningId, 'promote')}
-            onRejectLearning={(learningId) => void updateLearning(learningId, 'reject')}
-          />
+          {loading ? (
+            <div className="space-y-4">
+              <div className="h-48 animate-pulse rounded-[28px] bg-muted/60" />
+              <div className="grid gap-3 lg:grid-cols-2">
+                <div className="h-40 animate-pulse rounded-2xl bg-muted/60" />
+                <div className="h-40 animate-pulse rounded-2xl bg-muted/60" />
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <AutonomyStatusHero
+                model={trustCenter}
+                onAction={handleTrustAction}
+              />
+            </div>
+          )}
         </div>
 
         {error && (
@@ -2055,80 +2008,20 @@ export function AgentOpsClient({ orgId, workspaceSlug }: AgentOpsClientProps) {
           </div>
         )}
 
-        <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[340px_minmax(320px,460px)_1fr]">
-          <aside className="min-h-0 border-r bg-background/80">
-            <div className="flex items-center justify-between border-b px-4 py-3">
-              <div>
-                <h2 className="text-sm font-semibold">Workflows</h2>
-                <p className="text-xs text-muted-foreground">Clear verbs, durable runs.</p>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => void loadAll()}
-                disabled={loading}
-                aria-label="Refresh Agent Ops"
-              >
-                <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
-              </Button>
-            </div>
-            <div className="min-h-0 space-y-2 overflow-y-auto p-3">
-              {loading ? (
-                Array.from({ length: 6 }).map((_, index) => (
-                  <div key={index} className="h-24 animate-pulse rounded-xl bg-muted/60" />
-                ))
-              ) : orderedWorkflows.length === 0 ? (
-                <EmptyState
-                  icon={<ClipboardCheck className="h-8 w-8" />}
-                  title="No workflows"
-                  description="The Agent Ops workflow registry did not return any launchable workflows."
-                />
-              ) : (
-                orderedWorkflows.map((workflow) => (
-                  <button
-                    key={workflow.id}
-                    type="button"
-                    onClick={() => setSelectedWorkflowId(workflow.id)}
-                    className={cn(
-                      'w-full rounded-xl border p-3 text-left transition-colors hover:bg-accent/50',
-                      selectedWorkflow?.id === workflow.id
-                        ? 'border-primary/50 bg-primary/5'
-                        : 'border-border bg-card',
-                    )}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold">{workflow.name}</p>
-                        <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                          {workflow.promise}
-                        </p>
-                      </div>
-                      <Badge variant="outline" className="text-[10px]">
-                        {EXECUTION_LABELS[workflow.executionMode]}
-                      </Badge>
-                    </div>
-                    <div className="mt-3 flex flex-wrap gap-1.5">
-                      <Badge variant="secondary" className="text-[10px]">
-                        {SAFETY_LABELS[workflow.safetyMode]}
-                      </Badge>
-                      {workflow.evidenceTypes.slice(0, 2).map((type) => (
-                        <Badge key={type} variant="outline" className="text-[10px]">
-                          {formatLabel(type)}
-                        </Badge>
-                      ))}
-                    </div>
-                  </button>
-                ))
-              )}
-            </div>
-          </aside>
+        <div ref={runCheckRef} className="grid min-h-[680px] shrink-0 scroll-mt-4 grid-cols-1 lg:grid-cols-[320px_minmax(320px,460px)_1fr]">
+          <WorkflowPicker
+            workflows={primaryWorkflows}
+            selectedWorkflowId={selectedWorkflow?.id}
+            loading={loading}
+            totalCount={orderedWorkflows.length}
+            onSelectWorkflow={(workflowId) => setSelectedWorkflowId(workflowId as AgentOpsWorkflowId)}
+            onRefresh={() => void loadAll()}
+            onOpenCatalog={() => scrollIntoView(diagnosticsRef.current)}
+          />
 
           <section className="min-h-0 border-r bg-background">
             <div className="border-b px-4 py-3">
-              <h2 className="text-sm font-semibold">Launch</h2>
-              <p className="text-xs text-muted-foreground">
-                Start a product-level run. Worker execution can attach later through adapters.
-              </p>
+              <h2 className="text-sm font-semibold">Run check</h2>
             </div>
             <div className="space-y-5 p-4">
               {selectedWorkflow ? (
@@ -2154,9 +2047,6 @@ export function AgentOpsClient({ orgId, workspaceSlug }: AgentOpsClientProps) {
 
                   <label className="block space-y-1.5">
                     <span className="text-sm font-medium">Execution agent</span>
-                    <span className="block text-xs text-muted-foreground">
-                      Workflows need an owning agent so steps route to the right runtime.
-                    </span>
                     <select
                       value={selectedAssistantId}
                       onChange={(event) => setSelectedAssistantId(event.target.value)}
@@ -2173,16 +2063,13 @@ export function AgentOpsClient({ orgId, workspaceSlug }: AgentOpsClientProps) {
                     </select>
                     {!selectedAssistantId && selectedWorkflow.executionMode === 'dag' && (
                       <span className="block rounded-md border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-600">
-                        This run will stay queued until an execution agent is assigned by a contextual launcher or API caller.
+                        This check will stay queued until an agent is assigned.
                       </span>
                     )}
                   </label>
 
                   <label className="block space-y-1.5">
                     <span className="text-sm font-medium">Run mode</span>
-                    <span className="block text-xs text-muted-foreground">
-                      Choose whether this run should only plan, verify, execute, block, or wait for human handoff before dispatch.
-                    </span>
                     <select
                       value={selectedRunMode}
                       onChange={(event) => setSelectedRunMode(event.target.value as AgentOpsRunMode)}
@@ -2195,14 +2082,14 @@ export function AgentOpsClient({ orgId, workspaceSlug }: AgentOpsClientProps) {
                       ))}
                     </select>
                     <span className="block rounded-md border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-                      Mutating workflows still go through runtime compatibility, team policy, and approval gates.
+                      Risky actions still require compatibility checks, policy, and approvals.
                     </span>
                   </label>
 
                   <div className="space-y-3">
                     {selectedWorkflow.inputFields.length === 0 ? (
                       <div className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
-                        This workflow does not require input. It will run against the workspace scope.
+                        This check does not require input. It will run against the current scope.
                       </div>
                     ) : (
                       selectedWorkflow.inputFields.map((field) => (
@@ -2254,18 +2141,17 @@ export function AgentOpsClient({ orgId, workspaceSlug }: AgentOpsClientProps) {
                 <EmptyState
                   icon={<ClipboardCheck className="h-8 w-8" />}
                   title="Choose a workflow"
-                  description="Pick an Agent Ops workflow to launch it from Mission Control."
+                  description="Pick a check to run it from Mission Control."
                 />
               )}
             </div>
           </section>
 
-          <section className="grid min-h-0 grid-cols-1 xl:grid-cols-[380px_1fr]">
+          <section ref={evidenceRef} className="grid min-h-0 scroll-mt-4 grid-cols-1 xl:grid-cols-[380px_1fr]">
             <div className="min-h-0 border-r bg-background/80">
               <div className="flex items-center justify-between border-b px-4 py-3">
                 <div>
-                  <h2 className="text-sm font-semibold">Runs</h2>
-                  <p className="text-xs text-muted-foreground">Queued, running, and completed workflow history.</p>
+                  <h2 className="text-sm font-semibold">Run history</h2>
                 </div>
               </div>
               <div className="border-b px-4 py-2">
@@ -2297,8 +2183,8 @@ export function AgentOpsClient({ orgId, workspaceSlug }: AgentOpsClientProps) {
                 ) : runs.length === 0 ? (
                   <EmptyState
                     icon={<WorkflowIcon className="h-8 w-8" />}
-                    title="No runs yet"
-                    description="Launch a workflow to create the first durable Agent Ops run."
+                    title="No history yet"
+                    description="Run something from the Checks section to see results here. Verifiable proof lives in Proof Receipts."
                   />
                 ) : (
                   <ul className="divide-y">
@@ -2350,112 +2236,130 @@ export function AgentOpsClient({ orgId, workspaceSlug }: AgentOpsClientProps) {
             />
           </section>
         </div>
+
+        <div ref={diagnosticsRef} className="shrink-0 scroll-mt-4 space-y-3 border-t bg-background px-6 py-5">
+          <div>
+            <p className="text-base font-semibold tracking-tight">Advanced</p>
+          </div>
+          <AdvancedDiagnosticsSection
+            title="Diagnostics"
+            defaultOpen={trustCenter.state === 'blocked'}
+          >
+            <TrustSignals signals={trustCenter.signals} onAction={handleTrustAction} />
+            <AgentOpsPerformancePanel overview={overview} loading={loading} />
+            <AgentOpsTeamSetupDoctorPanel overview={overview} loading={loading} />
+            <AgentOpsQualityGatePanel overview={overview} loading={loading} />
+            <AgentOpsCompletionMatrixPanel overview={overview} loading={loading} />
+            <AgentOpsTeamPolicyPanel overview={overview} loading={loading} />
+            <AgentOpsBudgetControls
+              overview={overview}
+              loading={loading}
+              busy={busyAction === 'performance-budget:update'}
+              scopeLabel={launchParams.projectId ? 'Project budget' : 'Workspace budget'}
+              onSave={(values) => void updatePerformanceBudget(values)}
+            />
+            <AgentOpsAlertControls
+              overview={overview}
+              loading={loading}
+              busy={busyAction === 'performance-alerts:update'}
+              ackBusy={busyAction === 'performance-alerts:ack'}
+              scopeLabel={launchParams.projectId ? 'Project alerts' : 'Workspace alerts'}
+              onSave={(values) => void updatePerformanceAlertControls(values)}
+              onAcknowledge={() => void acknowledgePerformanceAlert()}
+              onSelectWorkflow={setSelectedWorkflowId}
+              onResolve={(alert) => void resolvePerformanceAlert(alert)}
+              resolveBusy={Boolean(overview?.performanceAlert?.fingerprint && busyAction === `performance-alerts:resolve:${overview.performanceAlert.fingerprint}`)}
+            />
+            <AgentOpsAlertHistoryPanel
+              overview={overview}
+              loading={loading}
+              onSelectWorkflow={setSelectedWorkflowId}
+              onResolve={(alert) => void resolvePerformanceAlert(alert)}
+              busyAction={busyAction}
+            />
+          </AdvancedDiagnosticsSection>
+
+          <AdvancedDiagnosticsSection
+            title="Agent behavior"
+          >
+            <AgentOpsSpecialistTelemetryPanel overview={overview} loading={loading} />
+            <AgentOpsDecisionPacingPanel overview={overview} loading={loading} />
+            <AgentOpsDesignOpsPanel overview={overview} loading={loading} />
+            <AgentOpsIntelligencePanel
+              overview={overview}
+              loading={loading}
+              busyAction={busyAction}
+              onArchiveLearning={(learningId) => void updateLearning(learningId, 'archive')}
+              onPromoteLearning={(learningId) => void updateLearning(learningId, 'promote')}
+              onRejectLearning={(learningId) => void updateLearning(learningId, 'reject')}
+            />
+          </AdvancedDiagnosticsSection>
+
+          <AdvancedDiagnosticsSection
+            title="Browser and external actions"
+          >
+            <AgentOpsBrowserOperatorCockpitPanel
+              overview={overview}
+              loading={loading}
+              busyAction={busyAction}
+              onProcedureTrust={(procedureId, action) => void updateBrowserProcedureTrust(procedureId, action)}
+              onPlaybookTrust={(playbookId, action) => void updateBrowserHostPlaybookTrust(playbookId, action)}
+              onSessionHandoff={(session, action) => void updateBrowserSessionHandoff(session, action)}
+            />
+            <AgentOpsBrowserTrustShieldPanel overview={overview} loading={loading} />
+            <AgentOpsBrowserLiveSessionsPanel
+              overview={overview}
+              loading={loading}
+              busyAction={busyAction}
+              onSessionHandoff={(session, action) => void updateBrowserSessionHandoff(session, action)}
+            />
+            <AgentOpsBrowserSharingPanel overview={overview} loading={loading} />
+            <AgentOpsBrowserProceduresPanel
+              overview={overview}
+              loading={loading}
+              busyAction={busyAction}
+              onTrustAction={(procedureId, action) => void updateBrowserProcedureTrust(procedureId, action)}
+            />
+            <AgentOpsBrowserHostPlaybooksPanel
+              overview={overview}
+              loading={loading}
+              busyAction={busyAction}
+              onTrustAction={(playbookId, action) => void updateBrowserHostPlaybookTrust(playbookId, action)}
+            />
+          </AdvancedDiagnosticsSection>
+
+          <AdvancedDiagnosticsSection
+            title="Check library"
+          >
+            <WorkflowPicker
+              title="All checks"
+              variant="panel"
+              workflows={orderedWorkflows}
+              selectedWorkflowId={selectedWorkflow?.id}
+              loading={loading}
+              onSelectWorkflow={(workflowId) => {
+                setSelectedWorkflowId(workflowId as AgentOpsWorkflowId)
+                scrollIntoView(runCheckRef.current)
+              }}
+            />
+            <AgentOpsAdvancedConfigurationPanel workspaceSlug={workspaceSlug} />
+            <AgentOpsPackManagerPanel
+              packs={packs}
+              installs={packInstalls}
+              resources={packResources}
+              loading={loading}
+              busyAction={busyAction}
+              onInstall={(packId) => void installPack(packId)}
+              onUpdateInstall={(installId, action) => void updatePackInstall(installId, action)}
+              onForkResource={(installId, resourceKey) => void updatePackInstall(installId, 'fork_resource', {
+                resourceKey,
+                reason: 'Operator forked from Mission Control before local edits.',
+              })}
+            />
+          </AdvancedDiagnosticsSection>
+        </div>
       </div>
     </CapabilityGate>
-  )
-}
-
-function AgentOpsOverviewStrip({
-  overview,
-  loading,
-}: {
-  overview: AgentOpsOverview | null
-  loading: boolean
-}) {
-  if (loading) {
-    return (
-      <div className="mt-3 grid gap-3 lg:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, index) => (
-          <div key={index} className="h-28 animate-pulse rounded-xl bg-muted/60" />
-        ))}
-      </div>
-    )
-  }
-
-  const latestEval = overview?.evalRuns[0] ?? null
-  const latestEvalReceipt = overview?.evalReceipts?.[0] ?? null
-  const latestLearning = overview?.learnings[0] ?? null
-  const latestAttempt = overview?.securityAttempts[0] ?? null
-  const latestBrowserEvent = overview?.browserSecurityEvents?.[0] ?? null
-  const latestSnapshot = overview?.contextSnapshots?.[0] ?? null
-
-  return (
-    <div className="mt-3 grid gap-3 lg:grid-cols-4">
-      <OverviewCard
-        title="Project learnings"
-        value={overview?.summary.learningCount ?? 0}
-        subtitle={latestLearning ? latestLearning.title : 'No active learnings yet'}
-        detail={latestLearning ? `${formatLabel(latestLearning.type)} · ${formatLabel(latestLearning.trustLevel)}` : 'Retro runs can promote safe operating memory.'}
-      />
-      <OverviewCard
-        title="Eval Center"
-        value={overview?.summary.latestEvalScore ?? '-'}
-        suffix={typeof overview?.summary.latestEvalScore === 'number' ? '/100' : undefined}
-        subtitle={latestEvalReceipt
-          ? `${formatLabel(latestEvalReceipt.verdict)} receipt · ${formatLabel(latestEvalReceipt.sourceType)}`
-          : latestEval
-            ? latestEval.targetRef ?? latestEval.workflowId ?? formatLabel(latestEval.targetKind)
-            : 'No eval runs yet'}
-        detail={latestEvalReceipt
-          ? `${latestEvalReceipt.judges.filter((judge) => judge.ok).length}/${latestEvalReceipt.judges.length} judges · ${formatDate(latestEvalReceipt.createdAt)}`
-          : latestEval
-            ? `Pass rate ${latestEval.passRate ?? '-'}% · ${formatDate(latestEval.createdAt)}`
-            : 'Ship, canary, and retro workflows now declare eval packs.'}
-      />
-      <OverviewCard
-        title="Trust Shield"
-        value={(overview?.summary.openSecurityAttemptCount ?? 0) + (overview?.summary.browserSecurityEventCount ?? 0)}
-        subtitle={latestBrowserEvent ? formatLabel(latestBrowserEvent.eventType) : latestAttempt ? latestAttempt.title : 'No open attempts'}
-        detail={latestBrowserEvent
-          ? `${formatLabel(latestBrowserEvent.severity)} · ${latestBrowserEvent.host ?? formatLabel(latestBrowserEvent.layer)}`
-          : latestAttempt
-            ? `${formatLabel(latestAttempt.severity)} · ${formatDate(latestAttempt.createdAt)}`
-            : 'Browser and untrusted content are wrapped, capped, and observable.'}
-        tone={((overview?.summary.openSecurityAttemptCount ?? 0) + (overview?.summary.blockingBrowserSecurityEventCount ?? 0)) > 0 ? 'warning' : 'default'}
-      />
-      <OverviewCard
-        title="Operating loop"
-        value={formatLabel(overview?.summary.safetyMode ?? overview?.projectPolicy?.safetyMode ?? 'normal')}
-        subtitle={latestSnapshot ? latestSnapshot.title : 'No context snapshots yet'}
-        detail={latestSnapshot ? `${formatLabel(latestSnapshot.kind)} · ${formatDate(latestSnapshot.createdAt)}` : 'Save handoffs, resume context, and project safety mode.'}
-        tone={(overview?.summary.safetyMode ?? overview?.projectPolicy?.safetyMode) === 'freeze' ? 'warning' : 'default'}
-      />
-    </div>
-  )
-}
-
-function OverviewCard({
-  title,
-  value,
-  suffix,
-  subtitle,
-  detail,
-  tone = 'default',
-}: {
-  title: string
-  value: number | string
-  suffix?: string
-  subtitle: string
-  detail: string
-  tone?: 'default' | 'warning'
-}) {
-  return (
-    <div className={cn(
-      'rounded-xl border bg-card px-4 py-3',
-      tone === 'warning' && 'border-amber-500/30 bg-amber-500/5',
-    )}>
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs text-muted-foreground">{title}</p>
-          <p className="mt-1 line-clamp-1 text-sm font-medium">{subtitle}</p>
-        </div>
-        <p className="text-2xl font-semibold tracking-tight">
-          {value}
-          {suffix && <span className="text-xs text-muted-foreground">{suffix}</span>}
-        </p>
-      </div>
-      <p className="mt-2 line-clamp-1 text-xs text-muted-foreground">{detail}</p>
-    </div>
   )
 }
 
@@ -2730,7 +2634,7 @@ function AgentOpsAdvancedConfigurationPanel({ workspaceSlug }: { workspaceSlug: 
   const items = [
     {
       title: 'Workflow templates',
-      description: 'Edit reusable workflow definitions used by Agent Ops runs.',
+      description: 'Edit reusable check definitions used by Agent Ops.',
       href: `/${workspaceSlug}/mission-control/dags/templates`,
       label: 'Open templates',
     },
@@ -3731,14 +3635,14 @@ function AgentOpsIntelligencePanel({
         <div className="flex items-center justify-between gap-3">
           <div>
             <h3 className="text-sm font-semibold">Eval history</h3>
-            <p className="text-xs text-muted-foreground">Workflow, model, channel, memory, runtime quality signals, and durable receipts.</p>
+            <p className="text-xs text-muted-foreground">Workflow, model, channel, memory, and runtime quality signals.</p>
           </div>
           <Badge variant="outline">{evalRuns.length + evalReceipts.length} recent</Badge>
         </div>
         {evalReceipts.length > 0 && (
           <div className="mt-3 space-y-2">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Quality receipts</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Quality records</p>
               <Badge variant="secondary">{evalReceipts.length}</Badge>
             </div>
             {evalReceipts.slice(0, 4).map((receipt) => {
@@ -4706,26 +4610,6 @@ function readDecisionSelectedLabel(event: AgentOpsDecisionEvent): string | null 
   return readString(event.selectedOption?.label)
 }
 
-function MetricCard({
-  label,
-  value,
-  icon,
-}: {
-  label: string
-  value: number
-  icon: ReactNode
-}) {
-  return (
-    <div className="rounded-xl border bg-card px-4 py-3">
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">{label}</span>
-        <span className="text-muted-foreground">{icon}</span>
-      </div>
-      <p className="mt-2 text-2xl font-semibold tracking-tight">{value}</p>
-    </div>
-  )
-}
-
 function RunDetailPanel({
   detail,
   workflows,
@@ -4766,8 +4650,8 @@ function RunDetailPanel({
     return (
       <EmptyState
         icon={<ArrowRight className="h-8 w-8" />}
-        title="Select a run"
-        description="Run details, evidence, findings, and controls will appear here."
+        title="Select a check"
+        description="The flight recorder will show what was checked, what happened, evidence, and next actions."
       />
     )
   }
@@ -4811,6 +4695,9 @@ function RunDetailPanel({
       <div className="border-b px-5 py-4">
         <div className="flex items-start justify-between gap-4">
           <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Flight Recorder
+            </p>
             <div className="flex items-center gap-2">
               <h2 className="text-base font-semibold">{formatLabel(run.workflowId)}</h2>
               <Badge variant="outline" className={cn('text-[10px]', STATUS_STYLES[run.status])}>
@@ -4961,7 +4848,7 @@ function RunDetailPanel({
         <section className="rounded-xl border bg-card">
           <div className="flex items-center justify-between border-b px-4 py-3">
             <div>
-              <h3 className="text-sm font-semibold">Eval receipts</h3>
+              <h3 className="text-sm font-semibold">Quality records</h3>
               <p className="mt-1 text-xs text-muted-foreground">
                 Cross-provider quality judgment for this run output, stored separately from raw artifacts.
               </p>
@@ -4970,7 +4857,7 @@ function RunDetailPanel({
           </div>
           {evalReceipts.length === 0 ? (
             <p className="p-4 text-sm text-muted-foreground">
-              No eval receipts recorded yet for this run.
+              No quality records yet for this run.
             </p>
           ) : (
             <div className="grid gap-3 p-4 lg:grid-cols-2">

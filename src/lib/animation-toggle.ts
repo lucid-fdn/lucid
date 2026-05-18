@@ -85,7 +85,7 @@ export function useAnimations() {
     Progress: () => import('@/components/ui/progress'),
     RadioGroup: () => import('@/components/ui/radio-group'),
     Switch: () => import('@/components/ui/switch'),
-    Tabs: () => import('@/components/ui/tabs'),
+    Tabs: () => import('@/components/ui/radix-tabs'),
   }
 }
 

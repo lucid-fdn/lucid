@@ -11,9 +11,8 @@ export async function POST(request: NextRequest) {
   try {
     const userId = await requireUserId()
     const input = nativeSessionRefreshInputSchema.parse(await request.json())
-    return NextResponse.json(refreshNativeSession(userId, input))
+    return NextResponse.json(await refreshNativeSession(userId, input))
   } catch (error) {
     return nativeApiError(error, 'POST /api/native/session/refresh')
   }
 }
-

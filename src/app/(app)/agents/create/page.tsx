@@ -45,7 +45,7 @@ import {
   Layers,
   Star,
 } from "lucide-react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/radix-tabs"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { useAgentCreationState, type AgentCreationState } from "@/hooks/useAgentCreationState"
 import {
